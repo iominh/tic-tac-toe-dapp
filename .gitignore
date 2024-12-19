@@ -1,0 +1,5 @@
+cli/localnet.env
+cli/Cargo.lock
+.bin
+.DS_Store
+node_modules
