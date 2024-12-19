@@ -74,7 +74,7 @@ export function CreateCounter({
 
   return (
     <Container>
-      {error && <Text color="red">{error}</Text>}
+      <div className="mb-6">{error && <Text color="red">{error}</Text>}</div>
       <Button size="3" onClick={create} disabled={isCreating}>
         {isCreating ? <ClipLoader size={20} /> : "Create Counter"}
       </Button>
