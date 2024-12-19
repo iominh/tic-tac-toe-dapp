@@ -6,7 +6,7 @@ import {
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { Button, Flex, Text } from "@radix-ui/themes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { Game as GameType, GameResult } from "../types";
 import { GameBoard } from "./GameBoard";
@@ -14,6 +14,18 @@ import { GameHistory } from "./GameHistory";
 
 interface GameProps {
   id: string;
+}
+
+interface RawGameData {
+  type: string;
+  fields: {
+    id: { id: string };
+    board: number[];
+    player_x: string;
+    player_o: string;
+    current_turn: string;
+    status: number;
+  };
 }
 
 export function Game({ id }: GameProps) {
@@ -32,7 +44,19 @@ export function Game({ id }: GameProps) {
     },
   });
 
-  const game = gameData?.data?.content?.fields as GameType | undefined;
+  const game = useMemo(() => {
+    if (!gameData?.data?.content) return undefined;
+
+    const raw = gameData.data.content as RawGameData;
+    return {
+      id: raw.fields.id.id,
+      board: raw.fields.board,
+      playerX: raw.fields.player_x,
+      playerO: raw.fields.player_o,
+      currentTurn: raw.fields.current_turn,
+      status: raw.fields.status as GameStatus,
+    } satisfies GameType;
+  }, [gameData]);
 
   // Subscribe to events
   useEffect(() => {
