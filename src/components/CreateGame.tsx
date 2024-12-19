@@ -1,8 +1,9 @@
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
-import { Button, Text } from "@radix-ui/themes";
+import { Button, Flex, Text } from "@radix-ui/themes";
 import { useState } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { Transaction } from "@mysten/sui/transactions";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface CreateGameProps {
   onGameCreated: (gameId: string) => void;
@@ -56,26 +57,35 @@ export function CreateGame({ onGameCreated }: CreateGameProps) {
               }
             } catch (e) {
               setError(`Error processing transaction: ${e}`);
+            } finally {
+              setIsCreating(false);
             }
           },
           onError: (e) => {
             setError(`Transaction failed: ${e.message}`);
+            setIsCreating(false);
           },
         },
       );
     } catch (e) {
       setError(`Failed to create game: ${e}`);
-    } finally {
       setIsCreating(false);
     }
   }
 
   return (
-    <div>
-      <div className="mb-4">{error && <Text color="red">{error}</Text>}</div>
+    <Flex direction="column" gap="4" align="center">
+      {error && <Text color="red">{error}</Text>}
       <Button size="3" onClick={create} disabled={isCreating}>
-        Create New Game
+        {isCreating ? (
+          <Flex align="center" gap="2">
+            <ClipLoader size={16} color="currentColor" />
+            <span>Creating Game...</span>
+          </Flex>
+        ) : (
+          "Create New Game"
+        )}
       </Button>
-    </div>
+    </Flex>
   );
 }
