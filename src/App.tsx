@@ -4,6 +4,7 @@ import { Box, Container, Flex, Heading } from "@radix-ui/themes";
 import { useState } from "react";
 import { Counter } from "./Counter";
 import { CreateCounter } from "./CreateCounter";
+import { TicTacToeIcon } from "./TicTacToeIcon";
 
 function App() {
   const currentAccount = useCurrentAccount();
@@ -24,7 +25,10 @@ function App() {
         }}
       >
         <Box>
-          <Heading>Tic Tac Toe</Heading>
+          <Flex align="center" gap="2">
+            <TicTacToeIcon className="w-6 h-6" />
+            <Heading>Tic Tac Toe</Heading>
+          </Flex>
         </Box>
 
         <Box>
