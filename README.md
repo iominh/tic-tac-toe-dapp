@@ -108,3 +108,6 @@ Project bootstrapped from https://docs.sui.io/guides/developer/first-app/publish
 ```
 sui client publish
 ```
+
+- PackageID 0x934442b8973e0eef69b8db6d7ae94dcec58a38d2ca3e468c02cca88a285ca535:
+  https://devnet.suivision.xyz/package/0x934442b8973e0eef69b8db6d7ae94dcec58a38d2ca3e468c02cca88a285ca535
