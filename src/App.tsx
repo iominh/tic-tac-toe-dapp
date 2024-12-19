@@ -1,6 +1,6 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Container, Flex, Heading, Link } from "@radix-ui/themes";
+import { Box, Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
 import { useState } from "react";
 import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";
@@ -72,7 +72,15 @@ function App() {
               />
             )
           ) : (
-            <Heading>Please connect your wallet</Heading>
+            <Flex direction="column" align="center" gap="4">
+              <Heading size="6" align="center">
+                Please connect your wallet
+              </Heading>
+              <Text color="gray">
+                Connect your wallet to create or join Tic Tac Toe games
+              </Text>
+              <ConnectButton />
+            </Flex>
           )}
         </Container>
       </Container>
