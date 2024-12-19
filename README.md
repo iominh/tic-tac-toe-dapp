@@ -109,8 +109,10 @@ Project bootstrapped from https://docs.sui.io/guides/developer/first-app/publish
 sui client publish
 ```
 
-- PackageID 0x934442b8973e0eef69b8db6d7ae94dcec58a38d2ca3e468c02cca88a285ca535:
-  https://devnet.suivision.xyz/package/0x934442b8973e0eef69b8db6d7ae94dcec58a38d2ca3e468c02cca88a285ca535
+# Counter
 
-- Tic Tac Toe
-  https://devnet.suivision.xyz/package/0x384922a1e4a3fb56ca2f36836ca85e135e5b051f2ef856bea55f007b46f3c762?tab=Code
+https://devnet.suivision.xyz/package/0x934442b8973e0eef69b8db6d7ae94dcec58a38d2ca3e468c02cca88a285ca535
+
+# Tic Tac Toe
+
+https://devnet.suivision.xyz/package/0x384922a1e4a3fb56ca2f36836ca85e135e5b051f2ef856bea55f007b46f3c762
