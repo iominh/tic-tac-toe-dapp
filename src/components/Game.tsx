@@ -11,7 +11,6 @@ import { useNetworkVariable } from "../networkConfig";
 import { Game as GameType, GameResult, GameStatus } from "../types";
 import { GameBoard } from "./GameBoard";
 import { GameHistory } from "./GameHistory";
-import { SuiObjectResponse } from "@mysten/sui/client";
 
 interface GameProps {
   id: string;
