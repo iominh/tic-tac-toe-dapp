@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";
 import { Game } from "./components/Game";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function App() {
   const currentAccount = useCurrentAccount();
@@ -14,7 +15,7 @@ function App() {
   });
 
   return (
-    <>
+    <ErrorBoundary>
       <Flex
         position="sticky"
         px="4"
@@ -58,7 +59,7 @@ function App() {
           )}
         </Container>
       </Container>
-    </>
+    </ErrorBoundary>
   );
 }
 

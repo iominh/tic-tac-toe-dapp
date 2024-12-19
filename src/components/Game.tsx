@@ -36,7 +36,7 @@ export function Game({ id }: GameProps) {
 
   // Subscribe to events
   useEffect(() => {
-    const subscription = suiClient.subscribeEvent({
+    const subscriptionId = suiClient.subscribeEvent({
       filter: {
         Package: packageId,
       },
@@ -47,7 +47,9 @@ export function Game({ id }: GameProps) {
     });
 
     return () => {
-      subscription.unsubscribe();
+      if (subscriptionId) {
+        suiClient.unsubscribeEvent({ id: subscriptionId });
+      }
     };
   }, [packageId, suiClient]);
 
