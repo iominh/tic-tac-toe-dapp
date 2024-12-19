@@ -100,3 +100,11 @@ To build your app for deployment you can run
 ```bash
 pnpm build
 ```
+
+#### Extra Notes
+
+Project bootstrapped from https://docs.sui.io/guides/developer/first-app/publish
+
+```
+sui client publish
+```
