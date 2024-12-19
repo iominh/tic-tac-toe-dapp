@@ -2,13 +2,13 @@ import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { isValidSuiObjectId } from "@mysten/sui/utils";
 import { Box, Container, Flex, Heading } from "@radix-ui/themes";
 import { useState } from "react";
-import { Counter } from "./Counter";
-import { CreateCounter } from "./CreateCounter";
 import { TicTacToeIcon } from "./TicTacToeIcon";
+import { CreateGame } from "./components/CreateGame";
+import { Game } from "./components/Game";
 
 function App() {
   const currentAccount = useCurrentAccount();
-  const [counterId, setCounter] = useState(() => {
+  const [gameId, setGameId] = useState(() => {
     const hash = window.location.hash.slice(1);
     return isValidSuiObjectId(hash) ? hash : null;
   });
@@ -43,13 +43,13 @@ function App() {
           style={{ background: "var(--gray-a2)", minHeight: 500 }}
         >
           {currentAccount ? (
-            counterId ? (
-              <Counter id={counterId} />
+            gameId ? (
+              <Game id={gameId} />
             ) : (
-              <CreateCounter
-                onCreated={(id) => {
+              <CreateGame
+                onGameCreated={(id) => {
                   window.location.hash = id;
-                  setCounter(id);
+                  setGameId(id);
                 }}
               />
             )
