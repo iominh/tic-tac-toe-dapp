@@ -1,6 +1,6 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Container, Flex, Heading } from "@radix-ui/themes";
+import { Box, Container, Flex, Heading, Link } from "@radix-ui/themes";
 import { useState } from "react";
 import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";
@@ -14,6 +14,11 @@ function App() {
     return isValidSuiObjectId(hash) ? hash : null;
   });
 
+  const handleHomeClick = () => {
+    window.location.hash = "";
+    setGameId(null);
+  };
+
   return (
     <ErrorBoundary>
       <Flex
@@ -26,10 +31,16 @@ function App() {
         }}
       >
         <Box>
-          <Flex align="center" gap="2">
-            <TicTacToeIcon className="w-6 h-6" />
-            <Heading>Tic Tac Toe</Heading>
-          </Flex>
+          <Link
+            onClick={handleHomeClick}
+            style={{ cursor: "pointer" }}
+            className="hover:opacity-80"
+          >
+            <Flex align="center" gap="2">
+              <TicTacToeIcon className="w-6 h-6" />
+              <Heading>Tic Tac Toe</Heading>
+            </Flex>
+          </Link>
         </Box>
 
         <Box>
