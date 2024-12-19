@@ -36,19 +36,29 @@ export function Game({ id }: GameProps) {
 
   // Subscribe to events
   useEffect(() => {
-    const subscriptionId = suiClient.subscribeEvent({
-      filter: {
-        Package: packageId,
-      },
-      onMessage(event: any) {
-        const result = event.parsedJson as GameResult;
-        setGameHistory((prev) => [result, ...prev]);
-      },
-    });
+    let unsubscribe: (() => void) | undefined;
+
+    async function subscribe() {
+      try {
+        unsubscribe = await suiClient.subscribeEvent({
+          filter: {
+            Package: packageId,
+          },
+          onMessage(event: any) {
+            const result = event.parsedJson as GameResult;
+            setGameHistory((prev) => [result, ...prev]);
+          },
+        });
+      } catch (e) {
+        setError(`Failed to subscribe to events: ${e}`);
+      }
+    }
+
+    subscribe();
 
     return () => {
-      if (subscriptionId) {
-        suiClient.unsubscribeEvent({ id: subscriptionId });
+      if (unsubscribe) {
+        unsubscribe();
       }
     };
   }, [packageId, suiClient]);
