@@ -8,9 +8,10 @@ import { Transaction } from "@mysten/sui/transactions";
 import { Button, Flex, Text } from "@radix-ui/themes";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNetworkVariable } from "../networkConfig";
-import { Game as GameType, GameResult } from "../types";
+import { Game as GameType, GameResult, GameStatus } from "../types";
 import { GameBoard } from "./GameBoard";
 import { GameHistory } from "./GameHistory";
+import { SuiObjectResponse } from "@mysten/sui/client";
 
 interface GameProps {
   id: string;
@@ -47,7 +48,7 @@ export function Game({ id }: GameProps) {
   const game = useMemo(() => {
     if (!gameData?.data?.content) return undefined;
 
-    const raw = gameData.data.content as RawGameData;
+    const raw = gameData.data.content as unknown as RawGameData;
     return {
       id: raw.fields.id.id,
       board: raw.fields.board,
