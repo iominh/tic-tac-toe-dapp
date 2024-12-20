@@ -3,7 +3,7 @@ import { Table } from "@radix-ui/themes";
 import { useEffect, useState, useCallback } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { GameResult, GameStatus } from "../types";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function parseGameResult(fields: Record<string, any>): GameResult {
   console.log("Parsing GameResult fields:", fields);
