@@ -23,6 +23,9 @@ const WINNING_LINES = [
   [2, 4, 6],
 ];
 
+const PLAYER_X_COLOR = "text-blue-500"; // Keep X as blue
+const PLAYER_O_COLOR = "text-violet-500"; // Change O to violet
+
 export function GameBoard({
   game,
   onMove,
@@ -102,7 +105,7 @@ export function GameBoard({
               value === 0 && isMyTurn && !disabled
                 ? "cursor-pointer hover:bg-gray-a4 group"
                 : ""
-            } ${isWinningCell(index) ? "bg-blue-500/20 border-blue-500 animate-pulse" : ""}`}
+            } ${isWinningCell(index) ? "bg-blue-100 border-blue-300" : ""}`}
             style={{
               borderColor: isWinningCell(index)
                 ? "var(--blue-a8)"
@@ -194,7 +197,7 @@ function GameStatus({ game }: { game: GameType }) {
 
     return (
       <Text size="3" align="center" className="mb-4">
-        <span className={isPlayerX ? "text-blue-500" : "text-red-500"}>
+        <span className={isPlayerX ? PLAYER_X_COLOR : PLAYER_O_COLOR}>
           Player {isPlayerX ? "X" : "O"} Won{betInfo}
         </span>
         <br />

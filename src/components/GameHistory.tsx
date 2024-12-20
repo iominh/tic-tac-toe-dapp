@@ -36,7 +36,7 @@ function formatGameResult(result: GameResult) {
 
     return (
       <span>
-        <span className={isPlayerX ? "text-blue-500" : "text-red-500"}>
+        <span className={isPlayerX ? "text-blue-500" : "text-violet-500"}>
           Player {isPlayerX ? "X" : "O"} Won
         </span>
         {betInfo}
