@@ -55,11 +55,8 @@ module tic_tac_toe::game {
         assert!(game.player_o == @0x0, EGameNotFull);
         assert!(joiner != game.player_x, EInvalidPlayer);
         
-        // Set player O
         game.player_o = joiner;
-        
-        // After O joins, X gets first turn
-        game.current_turn = game.player_x;
+        game.current_turn = game.player_o;
     }
 
     public fun make_move(game: &mut Game, position: u8, ctx: &TxContext) {
@@ -70,25 +67,25 @@ module tic_tac_toe::game {
         assert!(position < 9, EInvalidMove);
         assert!(vector::borrow(&game.board, (position as u64)) == &0, ESpotTaken);
         assert!(sender == game.current_turn, ENotYourTurn);
-        
-        // If player O hasn't joined, only X can make first move and then must wait
+
+        // If O hasn't joined, X can only make one move
         if (game.player_o == @0x0) {
-            assert!(sender == game.player_x, EInvalidPlayer); // Only X can play first
-            assert!(game.board == vector[0, 0, 0, 0, 0, 0, 0, 0, 0], EGameNotFull); // Must be first move
-            game.current_turn = @0x0; // Block further moves until O joins
+            assert!(sender == game.player_x, EInvalidPlayer);
+            game.current_turn = @0x0;
+            let player_piece = 1;
+            *vector::borrow_mut(&mut game.board, (position as u64)) = player_piece;
+            return;
         };
         
-        // Make move
+        // Normal gameplay after O has joined
         let player_piece = if (sender == game.player_x) 1 else 2;
         *vector::borrow_mut(&mut game.board, (position as u64)) = player_piece;
 
-        // Update turn only if both players are present
-        if (game.player_o != @0x0) {
-            game.current_turn = if (sender == game.player_x) {
-                game.player_o
-            } else {
-                game.player_x
-            };
+        // Switch turns
+        game.current_turn = if (sender == game.player_x) {
+            game.player_o
+        } else {
+            game.player_x
         };
 
         // Check win condition
