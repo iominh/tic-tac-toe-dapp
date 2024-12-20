@@ -21,37 +21,58 @@ export function GameBoard({ game, onMove, disabled }: GameBoardProps) {
     return value === 1 ? "X" : "O";
   };
 
+  const isWinningCell = (index: number): boolean => {
+    // Add logic to determine if this cell is part of winning line
+    // This would need to be added to your Game type and passed from the backend
+    return false; // TODO: implement with actual game state
+  };
+
   return (
-    <Box className="w-full max-w-md mx-auto">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="select-none">
+      <div className="grid grid-cols-3 gap-4 mb-2">
         {game.board.map((value, index) => (
-          <Button
+          <Box
             key={index}
-            size="4"
-            variant={value === 0 ? "surface" : "solid"}
-            onClick={() => onMove(index)}
-            disabled={disabled || !isMyTurn || value !== 0}
-            className="aspect-square text-2xl font-bold"
+            onClick={() =>
+              !disabled && isMyTurn && value === 0 && onMove(index)
+            }
+            className={`w-20 h-20 flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-200 ${
+              value === 0 && isMyTurn && !disabled
+                ? "cursor-pointer hover:bg-gray-a4"
+                : ""
+            } ${isWinningCell(index) ? "bg-blue-500/20 border-blue-500" : ""}`}
+            style={{
+              borderColor: isWinningCell(index)
+                ? "var(--blue-a8)"
+                : "var(--gray-a8)",
+              background:
+                value && !isWinningCell(index)
+                  ? "var(--gray-a3)"
+                  : "var(--gray-a2)",
+            }}
           >
-            {getSymbol(value)}
-          </Button>
+            <span
+              className={`transform transition-all duration-200 ${
+                value ? "scale-100" : "scale-0"
+              } ${isWinningCell(index) ? "text-blue-500" : ""}`}
+            >
+              {getSymbol(value)}
+            </span>
+          </Box>
         ))}
       </div>
 
-      <Flex direction="column" gap="2" align="center" className="mt-4">
-        <Text>
-          {game.status === 0
-            ? `Current Turn: ${game.currentTurn === game.playerX ? "X" : "O"}`
-            : game.status === 1
+      <div className="text-center mt-2">
+        <Text size="2" color="gray" className="transition-opacity duration-500">
+          {game.status !== 0
+            ? game.status === 1
               ? "Game Draw!"
-              : `Winner: ${game.currentTurn === game.playerX ? "X" : "O"}`}
+              : "Winner!"
+            : isMyTurn
+              ? "Your Turn!"
+              : "Opponent's Turn"}
         </Text>
-        {currentAccount && (
-          <Text size="2">
-            You are: {currentAccount.address === game.playerX ? "X" : "O"}
-          </Text>
-        )}
-      </Flex>
-    </Box>
+      </div>
+    </div>
   );
 }
