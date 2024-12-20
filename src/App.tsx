@@ -51,8 +51,9 @@ function App() {
       <Container>
         <Container
           mt="5"
-          pt="2"
-          px="4"
+          pt="6"
+          pb="8"
+          px="8"
           style={{
             background: "var(--gray-a2)",
             minHeight: 500,
