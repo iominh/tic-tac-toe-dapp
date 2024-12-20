@@ -27,6 +27,7 @@ function App() {
           px="4"
           py="2"
           justify="between"
+          align="center"
           style={{
             borderBottom: "1px solid var(--gray-a2)",
             zIndex: 50,
@@ -40,7 +41,7 @@ function App() {
             >
               <Flex align="center" gap="2">
                 <TicTacToeIcon className="w-6 h-6" />
-                <Heading>Tic Tac Toe</Heading>
+                <Heading size="4">Tic Tac Toe</Heading>
               </Flex>
             </Link>
           </Box>
