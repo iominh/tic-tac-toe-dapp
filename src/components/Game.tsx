@@ -131,7 +131,11 @@ export function Game({ id }: GameProps) {
   );
 
   if (!game) {
-    return <Text>Loading game...</Text>;
+    return (
+      <Flex align="center" justify="center" className="h-full">
+        <Text>Loading game...</Text>
+      </Flex>
+    );
   }
 
   const canJoin =
@@ -140,8 +144,12 @@ export function Game({ id }: GameProps) {
     game.playerX !== currentAccount.address;
 
   return (
-    <Flex direction="column" gap="4">
-      {error && <Text color="red">{error}</Text>}
+    <Flex direction="column" align="center" gap="8" className="w-full">
+      {error && (
+        <Text color="red" align="center">
+          {error}
+        </Text>
+      )}
 
       {canJoin ? (
         <Button onClick={joinGame}>Join Game</Button>
@@ -149,8 +157,8 @@ export function Game({ id }: GameProps) {
         <GameBoard game={game} onMove={makeMove} disabled={game.status !== 0} />
       )}
 
-      <div className="mt-8">
-        <Text size="5" mb="4">
+      <div className="w-full max-w-2xl">
+        <Text size="5" weight="bold" mb="4">
           Game History
         </Text>
         <GameHistory games={gameHistory} />
