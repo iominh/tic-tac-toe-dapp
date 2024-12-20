@@ -29,6 +29,23 @@ interface RawGameData {
   };
 }
 
+function parseGameResult(fields: Record<string, any>): GameResult {
+  console.log("Parsing fields:", fields);
+
+  let winner = null;
+  if (fields.winner && !fields.winner.none) {
+    winner = fields.winner.some?.toLowerCase() || null;
+  }
+
+  return {
+    gameId: fields.game_id.toLowerCase(),
+    playerX: fields.player_x.toLowerCase(),
+    playerO: fields.player_o.toLowerCase(),
+    winner: winner,
+    status: fields.status as GameStatus,
+  };
+}
+
 export function Game({ id, onLoadingChange }: GameProps) {
   const packageId = useNetworkVariable("ticTacToePackageId");
   const currentAccount = useCurrentAccount();
@@ -117,43 +134,81 @@ export function Game({ id, onLoadingChange }: GameProps) {
   // Fetch initial history and subscribe to game results
   useEffect(() => {
     let mounted = true;
+    let unsubscribe: (() => void) | undefined;
 
     async function fetchHistory() {
       try {
-        const events = await suiClient.queryEvents({
+        const resultEvents = await suiClient.queryEvents({
           query: {
-            MoveEventModule: {
-              module: "game",
-              package: packageId,
-            },
+            MoveEventType: `${packageId}::game::GameResult`,
           },
           order: "descending",
           limit: 50,
         });
 
+        console.log("Raw GameResult events:", resultEvents.data);
+
         if (!mounted) return;
 
-        const gameResults = events.data
+        // Filter and parse events for this specific game
+        const gameResults = resultEvents.data
           .filter((event) => {
-            const isGameResult =
-              event.type === `${packageId}::game::GameResult`;
-            if (!isGameResult) return false;
-
-            const result = event.parsedJson as unknown as GameResult;
-            return result.gameId === id;
+            if (!event.parsedJson) {
+              console.log("Event missing parsedJson:", event);
+              return false;
+            }
+            const parsedJson = event.parsedJson as Record<string, any>;
+            if (!parsedJson.game_id) {
+              console.log("Event missing game_id:", parsedJson);
+              return false;
+            }
+            return parsedJson.game_id.toLowerCase() === id.toLowerCase();
           })
-          .map((event) => event.parsedJson as unknown as GameResult);
+          .map((event) => {
+            try {
+              return parseGameResult(event.parsedJson as Record<string, any>);
+            } catch (e) {
+              console.error("Failed to parse event:", event, e);
+              return null;
+            }
+          })
+          .filter((result): result is GameResult => result !== null);
 
+        console.log("Final filtered game results:", gameResults);
         setGameHistory(gameResults);
       } catch (e) {
         console.error("Failed to fetch game history:", e);
       }
     }
 
+    async function setupSubscription() {
+      try {
+        unsubscribe = await suiClient.subscribeEvent({
+          filter: {
+            MoveEventType: `${packageId}::game::GameResult`,
+          },
+          onMessage: (event) => {
+            const result = parseGameResult(
+              event.parsedJson as Record<string, any>,
+            );
+            if (result.gameId === id) {
+              setGameHistory((prev) => [result, ...prev]);
+            }
+          },
+        });
+      } catch (e) {
+        console.error("Failed to subscribe to events:", e);
+      }
+    }
+
     fetchHistory();
+    setupSubscription();
 
     return () => {
       mounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, [packageId, suiClient, id]);
 
@@ -265,7 +320,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
         <Text size="5" weight="bold" mb="4">
           Game History
         </Text>
-        <GameHistory games={gameHistory} />
+        <GameHistory />
       </div>
     </Flex>
   );
