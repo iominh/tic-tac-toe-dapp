@@ -96,7 +96,9 @@ export function GameBoard({
 
   return (
     <div className="select-none mt-8">
-      <GameStatus game={game} />
+      <div className="mb-8">
+        <GameStatus game={game} />
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-2 w-[300px] mx-auto">
         {game.board.map((value, index) => (
