@@ -9,7 +9,7 @@ interface GameBoardProps {
   onMove: (position: number) => void;
   disabled?: boolean;
   isMovePending?: boolean;
-  pendingMoveIndex?: number;
+  pendingMoveIndex?: number | null;
 }
 
 export function GameBoard({
@@ -30,7 +30,7 @@ export function GameBoard({
     return value === 1 ? "X" : "O";
   };
 
-  const isWinningCell = (index: number): boolean => {
+  const isWinningCell = (_index: number): boolean => {
     return false; // TODO: implement with actual game state
   };
 

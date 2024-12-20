@@ -145,7 +145,7 @@ export function LandingPage() {
             color="gray"
             className="transition-opacity duration-500"
           >
-            {winningLine ? "Winner!" : "Demo Game Playing..."}
+            {winningLine ? "Winner!" : `${isX ? "X" : "O"}'s Turn...`}
           </Text>
         </div>
       </div>
