@@ -3,6 +3,7 @@ import { Table } from "@radix-ui/themes";
 import { useEffect, useState } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { GameResult, GameStatus } from "../types";
+import { Link } from "react-router-dom";
 
 function parseGameResult(fields: Record<string, any>): GameResult {
   return {
@@ -75,12 +76,12 @@ export function GameHistory() {
         {games.map((game, index) => (
           <Table.Row key={`${game.gameId}-${index}`}>
             <Table.Cell className="font-mono">
-              <a
-                href={`#${game.gameId}`}
+              <Link
+                to={`/game/${game.gameId}`}
                 className="text-blue-500 hover:text-blue-600"
               >
                 {game.gameId.slice(0, 8)}...
-              </a>
+              </Link>
             </Table.Cell>
             <Table.Cell className="font-mono">
               {game.playerX.slice(0, 6)}...

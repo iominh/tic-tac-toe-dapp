@@ -11,11 +11,7 @@ import { useNetworkVariable } from "../networkConfig";
 import { Game as GameType, GameResult, GameStatus } from "../types";
 import { GameBoard } from "./GameBoard";
 import { GameHistory } from "./GameHistory";
-
-interface GameProps {
-  id: string;
-  onLoadingChange?: (loading: boolean) => void;
-}
+import { useParams } from "react-router-dom";
 
 interface RawGameData {
   type: string;
@@ -46,7 +42,12 @@ function parseGameResult(fields: Record<string, any>): GameResult {
   };
 }
 
-export function Game({ id, onLoadingChange }: GameProps) {
+export function Game({
+  onLoadingChange,
+}: {
+  onLoadingChange?: (loading: boolean) => void;
+}) {
+  const { gameId } = useParams();
   const packageId = useNetworkVariable("ticTacToePackageId");
   const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
@@ -55,9 +56,14 @@ export function Game({ id, onLoadingChange }: GameProps) {
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<number | null>(null);
 
+  // Validate gameId
+  if (!gameId) {
+    return <div>Invalid game ID</div>;
+  }
+
   // Use page progress bar only for initial load
   const { data: gameData, refetch } = useSuiClientQuery("getObject", {
-    id,
+    id: gameId,
     options: {
       showContent: true,
       showOwner: true,
@@ -162,7 +168,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
               console.log("Event missing game_id:", parsedJson);
               return false;
             }
-            return parsedJson.game_id.toLowerCase() === id.toLowerCase();
+            return parsedJson.game_id.toLowerCase() === gameId.toLowerCase();
           })
           .map((event) => {
             try {
@@ -191,7 +197,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
             const result = parseGameResult(
               event.parsedJson as Record<string, any>,
             );
-            if (result.gameId === id) {
+            if (result.gameId === gameId) {
               setGameHistory((prev) => [result, ...prev]);
             }
           },
@@ -210,7 +216,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
         unsubscribe();
       }
     };
-  }, [packageId, suiClient, id]);
+  }, [packageId, suiClient, gameId]);
 
   const canJoin = useMemo(() => {
     if (!currentAccount || !game) return false;
@@ -226,7 +232,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
 
     const tx = new Transaction();
     tx.moveCall({
-      arguments: [tx.object(id)],
+      arguments: [tx.object(gameId)],
       target: `${packageId}::game::join_game`,
     });
 
@@ -246,7 +252,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
         onError: (e) => setError(`Failed to join: ${e.message}`),
       },
     );
-  }, [id, packageId, refetch, signAndExecute, suiClient, game]);
+  }, [gameId, packageId, refetch, signAndExecute, suiClient, game]);
 
   const makeMove = useCallback(
     (position: number) => {
@@ -255,7 +261,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
 
       const tx = new Transaction();
       tx.moveCall({
-        arguments: [tx.object(id), tx.pure.u8(position)],
+        arguments: [tx.object(gameId), tx.pure.u8(position)],
         target: `${packageId}::game::make_move`,
       });
 
@@ -282,7 +288,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
         },
       );
     },
-    [id, packageId, refetch, signAndExecute, suiClient],
+    [gameId, packageId, refetch, signAndExecute, suiClient],
   );
 
   if (!game) {

@@ -1,7 +1,7 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { isValidSuiObjectId } from "@mysten/sui/utils";
 import { Box, Container, Flex, Heading, Link } from "@radix-ui/themes";
-import { useState, useCallback } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";
 import { Game } from "./components/Game";
@@ -11,20 +11,12 @@ import { ProgressBar } from "./components/ProgressBar";
 
 function App() {
   const currentAccount = useCurrentAccount();
-  const [gameId, setGameId] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return isValidSuiObjectId(hash) ? hash : null;
-  });
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleHomeClick = () => {
-    window.location.hash = "";
-    setGameId(null);
+    navigate("/");
   };
-
-  const setLoading = useCallback((loading: boolean) => {
-    setIsLoading(loading);
-  }, []);
 
   return (
     <>
@@ -72,16 +64,20 @@ function App() {
             }}
           >
             {currentAccount ? (
-              gameId ? (
-                <Game id={gameId} onLoadingChange={setLoading} />
-              ) : (
-                <CreateGame
-                  onGameCreated={(id) => {
-                    window.location.hash = id;
-                    setGameId(id);
-                  }}
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <CreateGame
+                      onGameCreated={(id) => navigate(`/game/${id}`)}
+                    />
+                  }
                 />
-              )
+                <Route
+                  path="/game/:gameId"
+                  element={<Game onLoadingChange={setIsLoading} />}
+                />
+              </Routes>
             ) : (
               <LandingPage />
             )}
