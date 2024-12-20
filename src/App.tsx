@@ -1,6 +1,6 @@
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
+import { Box, Container, Flex, Heading, Link } from "@radix-ui/themes";
 import { useState } from "react";
 import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";

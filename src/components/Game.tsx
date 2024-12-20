@@ -59,19 +59,42 @@ export function Game({ id }: GameProps) {
     } satisfies GameType;
   }, [gameData]);
 
-  // Subscribe to events
+  // Subscribe to events and fetch initial history
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+
+    async function fetchHistory() {
+      try {
+        // Fetch past events
+        const events = await suiClient.queryEvents({
+          query: { Package: packageId },
+          limit: 50, // Adjust as needed
+        });
+
+        // Filter and sort events
+        const gameResults = events.data
+          .map((event) => event.parsedJson as GameResult)
+          .filter((result) => result.gameId === id)
+          .reverse();
+
+        setGameHistory(gameResults);
+      } catch (e) {
+        console.error("Failed to fetch game history:", e);
+      }
+    }
 
     async function subscribe() {
       try {
         unsubscribe = await suiClient.subscribeEvent({
           filter: {
             Package: packageId,
+            MoveEventType: `${packageId}::game::GameResult`,
           },
           onMessage(event: any) {
             const result = event.parsedJson as GameResult;
-            setGameHistory((prev) => [result, ...prev]);
+            if (result.gameId === id) {
+              setGameHistory((prev) => [result, ...prev]);
+            }
           },
         });
       } catch (e) {
@@ -79,6 +102,7 @@ export function Game({ id }: GameProps) {
       }
     }
 
+    fetchHistory();
     subscribe();
 
     return () => {
@@ -86,7 +110,7 @@ export function Game({ id }: GameProps) {
         unsubscribe();
       }
     };
-  }, [packageId, suiClient]);
+  }, [packageId, suiClient, id]);
 
   const joinGame = useCallback(() => {
     const tx = new Transaction();
@@ -122,11 +146,36 @@ export function Game({ id }: GameProps) {
           transaction: tx,
         },
         {
-          onSuccess: ({ digest }) => {
-            suiClient.waitForTransaction({ digest }).then(() => {
+          onSuccess: async ({ digest }) => {
+            try {
+              // Wait for transaction
+              await suiClient.waitForTransaction({ digest });
+
+              // Get transaction details
+              const txDetails = await suiClient.getTransactionBlock({
+                digest,
+                options: {
+                  showEvents: true,
+                },
+              });
+
+              // Update history if there's a game result event
+              const gameResultEvent = txDetails.events?.find(
+                (event) => event.type === `${packageId}::game::GameResult`,
+              );
+
+              if (gameResultEvent) {
+                const result = gameResultEvent.parsedJson as GameResult;
+                setGameHistory((prev) => [result, ...prev]);
+              }
+
+              // Refresh game state
               refetch();
+            } catch (e) {
+              setError(`Error processing move: ${e}`);
+            } finally {
               setPendingMove(null);
-            });
+            }
           },
           onError: (e) => {
             setError(`Failed to make move: ${e.message}`);
