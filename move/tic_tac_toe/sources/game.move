@@ -71,6 +71,22 @@ module tic_tac_toe::game {
         assert!(vector::borrow(&game.board, (position as u64)) == &0, ESpotTaken);
         assert!(sender == game.current_turn, ENotYourTurn);
         
+        // Additional validation: if player O hasn't joined, X can only make one move
+        if (game.player_o == @0x0) {
+            assert!(sender == game.player_x, EInvalidPlayer);
+            // Check if X has already made a move
+            let mut has_moves = false;
+            let mut i = 0;
+            while (i < 9) {
+                if (*vector::borrow(&game.board, i) != 0) {
+                    has_moves = true;
+                    break;
+                };
+                i = i + 1;
+            };
+            assert!(!has_moves, EGameNotFull);
+        };
+        
         // Make move
         let player_piece = if (sender == game.player_x) 1 else 2;
         *vector::borrow_mut(&mut game.board, (position as u64)) = player_piece;
