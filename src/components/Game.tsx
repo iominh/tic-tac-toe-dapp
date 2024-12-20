@@ -87,7 +87,10 @@ export function Game({ id }: GameProps) {
         // Query all events from this package
         const events = await suiClient.queryEvents({
           query: {
-            Package: packageId,
+            MoveEventModule: {
+              module: "game",
+              package: packageId,
+            },
           },
           order: "descending",
           limit: 50,
@@ -99,7 +102,6 @@ export function Game({ id }: GameProps) {
 
         const gameResults = events.data
           .filter((event) => {
-            // Check if it's our event type
             const isGameResult =
               event.type === `${packageId}::game::GameResult`;
             console.log(
@@ -116,17 +118,12 @@ export function Game({ id }: GameProps) {
             console.log(
               "Event game ID:",
               result.gameId,
-              "Matches current game:",
+              "Matches:",
               matchesGame,
             );
-
             return matchesGame;
           })
-          .map((event) => {
-            const result = event.parsedJson as GameResult;
-            console.log("Adding result to history:", result);
-            return result;
-          });
+          .map((event) => event.parsedJson as GameResult);
 
         console.log("Final game results:", gameResults);
         setGameHistory(gameResults);
@@ -139,16 +136,17 @@ export function Game({ id }: GameProps) {
       try {
         unsubscribe = await suiClient.subscribeEvent({
           filter: {
-            Package: packageId,
+            MoveEventModule: {
+              module: "game",
+              package: packageId,
+            },
           },
           onMessage(event: any) {
             if (event.type !== `${packageId}::game::GameResult`) return;
 
-            console.log("New event received:", event);
             const result = event.parsedJson as GameResult;
-
             if (result.gameId === id) {
-              console.log("Adding new result to history:", result);
+              console.log("New game result:", result);
               setGameHistory((prev) => [result, ...prev]);
             }
           },
