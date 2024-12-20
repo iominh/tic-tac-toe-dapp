@@ -78,13 +78,48 @@ export function Game({ id }: GameProps) {
     } satisfies GameType;
   }, [gameData]);
 
-  // Subscribe to events and fetch initial history
+  // Efficient polling with proper cleanup and error handling
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    async function pollGameState() {
+      if (!mounted) return;
+
+      try {
+        await refetch();
+
+        // Schedule next poll if game is active
+        if (mounted && game?.status === 0) {
+          timeoutId = setTimeout(pollGameState, 1000);
+        }
+      } catch (e) {
+        console.error("Poll error:", e);
+        // Retry on error with backoff
+        if (mounted) {
+          timeoutId = setTimeout(pollGameState, 2000);
+        }
+      }
+    }
+
+    // Start polling
+    pollGameState();
+
+    // Cleanup
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [game?.status, refetch]);
+
+  // Fetch initial history and subscribe to game results
+  useEffect(() => {
+    let mounted = true;
 
     async function fetchHistory() {
       try {
-        // Query all events from this package
         const events = await suiClient.queryEvents({
           query: {
             MoveEventModule: {
@@ -96,73 +131,26 @@ export function Game({ id }: GameProps) {
           limit: 50,
         });
 
-        console.log("Package ID:", packageId);
-        console.log("Game ID:", id);
-        console.log("Raw events:", events.data);
+        if (!mounted) return;
 
         const gameResults = events.data
           .filter((event) => {
             const isGameResult =
               event.type === `${packageId}::game::GameResult`;
-            console.log(
-              "Event type:",
-              event.type,
-              "Is game result:",
-              isGameResult,
-            );
-
-            if (!isGameResult) return false;
-
-            const result = event.parsedJson as GameResult;
-            const matchesGame = result.gameId === id;
-            console.log(
-              "Event game ID:",
-              result.gameId,
-              "Matches:",
-              matchesGame,
-            );
-            return matchesGame;
+            return isGameResult && event.parsedJson.gameId === id;
           })
           .map((event) => event.parsedJson as GameResult);
 
-        console.log("Final game results:", gameResults);
         setGameHistory(gameResults);
       } catch (e) {
         console.error("Failed to fetch game history:", e);
       }
     }
 
-    async function subscribe() {
-      try {
-        unsubscribe = await suiClient.subscribeEvent({
-          filter: {
-            MoveEventModule: {
-              module: "game",
-              package: packageId,
-            },
-          },
-          onMessage(event: any) {
-            if (event.type !== `${packageId}::game::GameResult`) return;
-
-            const result = event.parsedJson as GameResult;
-            if (result.gameId === id) {
-              console.log("New game result:", result);
-              setGameHistory((prev) => [result, ...prev]);
-            }
-          },
-        });
-      } catch (e) {
-        setError(`Failed to subscribe to events: ${e}`);
-      }
-    }
-
     fetchHistory();
-    subscribe();
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      mounted = false;
     };
   }, [packageId, suiClient, id]);
 
@@ -235,20 +223,6 @@ export function Game({ id }: GameProps) {
     },
     [id, packageId, refetchWithIndicator, signAndExecute, suiClient],
   );
-
-  // Add polling effect
-  useEffect(() => {
-    // Only poll if we're in an active game
-    if (!game || game.status !== 0) return;
-
-    const pollInterval = setInterval(() => {
-      refetch();
-    }, 2000); // Poll every 2 seconds
-
-    return () => {
-      clearInterval(pollInterval);
-    };
-  }, [game, refetch]);
 
   if (!game) {
     return (
