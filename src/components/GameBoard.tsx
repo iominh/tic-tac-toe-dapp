@@ -12,6 +12,12 @@ interface GameBoardProps {
   pendingMoveIndex?: number | null;
 }
 
+// Helper function to format addresses
+function formatAddress(address: string): string {
+  if (address === "0x0") return "Waiting for player";
+  return `${address.slice(0, 8)}...${address.slice(-4)}`;
+}
+
 export function GameBoard({
   game,
   onMove,
@@ -55,38 +61,35 @@ export function GameBoard({
 
   return (
     <div className="select-none">
-      <div className="text-center mb-4">
+      <div className="text-center mb-4 h-24 flex flex-col justify-center">
         <Text size="2" color="gray">
           Game State:
         </Text>
         <Text size="2" color="gray">
-          Player X: {game.playerX.slice(0, 8)}...
+          Player X: {formatAddress(game.playerX)}
         </Text>
         <Text size="2" color="gray">
           Player O:{" "}
           {game.playerO === "0x0"
             ? "Waiting for player"
-            : game.playerO.slice(0, 8) + "..."}
+            : formatAddress(game.playerO)}
         </Text>
         <Text size="2" color="gray">
           Current Turn:{" "}
           {game.currentTurn === "0x0"
             ? "Not started"
-            : game.currentTurn.slice(0, 8) + "..."}
-        </Text>
-        <Text size="2" color="gray">
-          Your Address: {currentAccount?.address.slice(0, 8)}...
+            : formatAddress(game.currentTurn)}
         </Text>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-2">
+      <div className="grid grid-cols-3 gap-4 mb-2 w-[300px] mx-auto">
         {game.board.map((value, index) => (
           <Box
             key={index}
             onClick={() =>
               !disabled && isMyTurn && value === 0 && onMove(index)
             }
-            className={`w-20 h-20 flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-200 ${
+            className={`aspect-square flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-200 ${
               value === 0 && isMyTurn && !disabled
                 ? "cursor-pointer hover:bg-gray-a4"
                 : ""
@@ -116,7 +119,7 @@ export function GameBoard({
         ))}
       </div>
 
-      <div className="text-center mt-2">
+      <div className="text-center mt-2 h-6">
         <Text size="2" color="gray" className="transition-opacity duration-500">
           {game.status !== 0
             ? game.status === 1
