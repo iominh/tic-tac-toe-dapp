@@ -81,6 +81,10 @@ export function GameBoard({
     return winningLine?.includes(index) ?? false;
   };
 
+  function getPlayerSymbol(isPlayerX: boolean) {
+    return isPlayerX ? "X" : "O";
+  }
+
   return (
     <div className="select-none mt-8">
       <div className="mb-8">
@@ -96,7 +100,7 @@ export function GameBoard({
             }
             className={`aspect-square flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-500 ${
               value === 0 && isMyTurn && !disabled
-                ? "cursor-pointer hover:bg-gray-a4"
+                ? "cursor-pointer hover:bg-gray-a4 group"
                 : ""
             } ${isWinningCell(index) ? "bg-blue-500/20 border-blue-500 animate-pulse" : ""}`}
             style={{
@@ -112,13 +116,20 @@ export function GameBoard({
             {isMovePending && index === pendingMoveIndex ? (
               <ClipLoader size={32} color="currentColor" />
             ) : (
-              <span
-                className={`transform transition-all duration-200 ${
-                  value ? "scale-100" : "scale-0"
-                } ${isWinningCell(index) ? "text-blue-500" : ""}`}
-              >
-                {getSymbol(value)}
-              </span>
+              <>
+                <span
+                  className={`transform transition-all duration-200 ${
+                    value ? "scale-100" : "scale-0"
+                  } ${isWinningCell(index) ? "text-blue-500" : ""}`}
+                >
+                  {getSymbol(value)}
+                </span>
+                {value === 0 && isMyTurn && !disabled && (
+                  <span className="absolute opacity-0 group-hover:opacity-30 transition-opacity">
+                    {getPlayerSymbol(game.currentTurn === game.playerX)}
+                  </span>
+                )}
+              </>
             )}
           </Box>
         ))}
