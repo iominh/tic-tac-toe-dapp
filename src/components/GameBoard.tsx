@@ -1,7 +1,7 @@
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Box, Text } from "@radix-ui/themes";
+import { Box, Button, Flex, Text } from "@radix-ui/themes";
 import { Game } from "../types";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 
 interface GameBoardProps {
@@ -26,6 +26,7 @@ export function GameBoard({
   pendingMoveIndex,
 }: GameBoardProps) {
   const currentAccount = useCurrentAccount();
+  const [copied, setCopied] = useState(false);
 
   const isMyTurn = useMemo(() => {
     if (!currentAccount) return false;
@@ -59,6 +60,18 @@ export function GameBoard({
     return false; // TODO: implement with actual game state
   };
 
+  const handleCopyLink = () => {
+    const gameUrl = `${window.location.origin}${window.location.pathname}#${game.id}`;
+    navigator.clipboard.writeText(gameUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isWaitingForPlayer =
+    game.playerO ===
+    "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const gameUrl = `${window.location.origin}${window.location.pathname}#${game.id}`;
+
   return (
     <div className="select-none">
       <div className="text-center mb-4 h-24 flex flex-col justify-center">
@@ -68,18 +81,40 @@ export function GameBoard({
         <Text size="2" color="gray">
           Player X: {formatAddress(game.playerX)}
         </Text>
-        <Text size="2" color="gray">
-          Player O:{" "}
-          {game.playerO === "0x0"
-            ? "Waiting for player"
-            : formatAddress(game.playerO)}
-        </Text>
-        <Text size="2" color="gray">
-          Current Turn:{" "}
-          {game.currentTurn === "0x0"
-            ? "Not started"
-            : formatAddress(game.currentTurn)}
-        </Text>
+        {isWaitingForPlayer ? (
+          <Flex direction="column" align="center" gap="2">
+            <Text size="2" color="gray">
+              Waiting for friend to join...
+            </Text>
+            <Flex align="center" gap="2" className="w-full max-w-md">
+              <Text
+                size="2"
+                className="font-mono px-3 py-1 bg-gray-a3 rounded flex-1 truncate"
+              >
+                {gameUrl}
+              </Text>
+              <Button
+                onClick={handleCopyLink}
+                size="1"
+                className="transition-colors shrink-0"
+              >
+                {copied ? "Copied!" : "Copy link to share with friend"}
+              </Button>
+            </Flex>
+          </Flex>
+        ) : (
+          <>
+            <Text size="2" color="gray">
+              Player O: {formatAddress(game.playerO)}
+            </Text>
+            <Text size="2" color="gray">
+              Current Turn:{" "}
+              {game.currentTurn === "0x0"
+                ? "Not started"
+                : formatAddress(game.currentTurn)}
+            </Text>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-2 w-[300px] mx-auto">
