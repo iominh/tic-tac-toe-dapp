@@ -1,21 +1,15 @@
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Box, Button, Flex, Text } from "@radix-ui/themes";
-import { Game } from "../types";
+import { Box, Text } from "@radix-ui/themes";
+import { Game as GameType } from "../types";
 import { useMemo, useState } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 
 interface GameBoardProps {
-  game: Game;
+  game: GameType;
   onMove: (position: number) => void;
   disabled?: boolean;
   isMovePending?: boolean;
   pendingMoveIndex?: number | null;
-}
-
-// Helper function to format addresses
-function formatAddress(address: string): string {
-  if (address === "0x0") return "Waiting for player";
-  return `${address.slice(0, 8)}...${address.slice(-4)}`;
 }
 
 const WINNING_LINES = [
@@ -37,7 +31,7 @@ export function GameBoard({
   pendingMoveIndex,
 }: GameBoardProps) {
   const currentAccount = useCurrentAccount();
-  const [copied, setCopied] = useState(false);
+  const [, setCopied] = useState(false);
 
   const isMyTurn = useMemo(() => {
     if (!currentAccount) return false;
@@ -101,46 +95,8 @@ export function GameBoard({
   const gameUrl = `${window.location.origin}${window.location.pathname}#${game.id}`;
 
   return (
-    <div className="select-none">
-      <div className="text-center mb-4 h-24 flex flex-col justify-center">
-        <Text size="2" color="gray">
-          Player X: {formatAddress(game.playerX)}
-        </Text>
-        {isWaitingForPlayer ? (
-          <Flex direction="column" align="center" gap="2">
-            <Text size="2" color="gray">
-              Waiting for friend to join...
-            </Text>
-            <Flex align="center" gap="2" className="w-full max-w-md">
-              <Text
-                size="2"
-                className="font-mono px-3 py-1 bg-gray-a3 rounded flex-1 truncate"
-              >
-                {gameUrl}
-              </Text>
-              <Button
-                onClick={handleCopyLink}
-                size="1"
-                className="transition-colors shrink-0"
-              >
-                {copied ? "Copied!" : "Copy link to share with friend"}
-              </Button>
-            </Flex>
-          </Flex>
-        ) : (
-          <>
-            <Text size="2" color="gray">
-              Player O: {formatAddress(game.playerO)}
-            </Text>
-            <Text size="2" color="gray">
-              Current Turn:{" "}
-              {game.currentTurn === "0x0"
-                ? "Not started"
-                : formatAddress(game.currentTurn)}
-            </Text>
-          </>
-        )}
-      </div>
+    <div className="select-none mt-8">
+      <GameStatus game={game} />
 
       <div className="grid grid-cols-3 gap-4 mb-2 w-[300px] mx-auto">
         {game.board.map((value, index) => (
@@ -182,9 +138,7 @@ export function GameBoard({
       <div className="text-center mt-2 h-6">
         <Text size="2" color="gray" className="transition-opacity duration-500">
           {game.status !== 0
-            ? game.status === 1
-              ? "Game Draw!"
-              : "Winner!"
+            ? ""
             : isMyTurn
               ? isMovePending
                 ? "Making move..."
@@ -193,5 +147,41 @@ export function GameBoard({
         </Text>
       </div>
     </div>
+  );
+}
+
+function GameStatus({ game }: { game: GameType }) {
+  if (game.status === 2) {
+    const winner = game.currentTurn;
+    const isPlayerX = winner === game.playerX;
+    return (
+      <Text size="3" align="center" className="mb-4">
+        <span className={isPlayerX ? "text-blue-500" : "text-red-500"}>
+          {isPlayerX ? "Player X" : "Player O"}
+        </span>{" "}
+        won!
+        <br />
+        <span className="text-sm text-gray-500 font-mono">
+          {winner.slice(0, 10)}...{winner.slice(-4)}
+        </span>
+      </Text>
+    );
+  }
+
+  if (game.status === 1) {
+    return (
+      <Text size="3" align="center" className="mb-4">
+        Game ended in a draw!
+      </Text>
+    );
+  }
+
+  return (
+    <Text size="3" align="center" className="mb-4">
+      Current Turn:{" "}
+      <span className="font-mono">
+        {game.currentTurn.slice(0, 10)}...{game.currentTurn.slice(-4)}
+      </span>
+    </Text>
   );
 }

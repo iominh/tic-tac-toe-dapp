@@ -124,16 +124,23 @@ export function GameHistory() {
                 "Draw"
               ) : game.status === 2 && game.winner ? (
                 <span>
-                  Winner:{" "}
                   {game.winner === game.playerX ? (
-                    <span className="text-blue-500">Player X</span>
+                    <span>
+                      <span className="text-blue-500">Player X</span> won!
+                      <br />
+                      <span className="text-sm text-gray-500 font-mono">
+                        {game.playerX.slice(0, 10)}...{game.playerX.slice(-4)}
+                      </span>
+                    </span>
                   ) : (
-                    <span className="text-red-500">Player O</span>
+                    <span>
+                      <span className="text-red-500">Player O</span> won!
+                      <br />
+                      <span className="text-sm text-gray-500 font-mono">
+                        {game.playerO.slice(0, 10)}...{game.playerO.slice(-4)}
+                      </span>
+                    </span>
                   )}
-                  <br />
-                  <span className="text-sm text-gray-500 font-mono">
-                    {game.winner.slice(0, 10)}...{game.winner.slice(-4)}
-                  </span>
                 </span>
               ) : (
                 "Complete"
