@@ -6,6 +6,12 @@ interface GameHistoryProps {
 }
 
 export function GameHistory({ games }: GameHistoryProps) {
+  console.log("Rendering game history with:", games);
+
+  if (games.length === 0) {
+    return <div className="text-center text-gray-500">No game history yet</div>;
+  }
+
   return (
     <Table.Root>
       <Table.Header>
@@ -17,14 +23,20 @@ export function GameHistory({ games }: GameHistoryProps) {
       </Table.Header>
 
       <Table.Body>
-        {games.map((game) => (
-          <Table.Row key={game.gameId}>
-            <Table.Cell className="font-mono">{game.playerX}</Table.Cell>
-            <Table.Cell className="font-mono">{game.playerO}</Table.Cell>
+        {games.map((game, index) => (
+          <Table.Row key={`${game.gameId}-${index}`}>
+            <Table.Cell className="font-mono">
+              {game.playerX.slice(0, 6)}...
+            </Table.Cell>
+            <Table.Cell className="font-mono">
+              {game.playerO.slice(0, 6)}...
+            </Table.Cell>
             <Table.Cell>
               {game.status === 1
                 ? "Draw"
-                : `Winner: ${game.winner?.slice(0, 6)}...`}
+                : game.winner
+                  ? `Winner: ${game.winner.slice(0, 6)}...`
+                  : "In Progress"}
             </Table.Cell>
           </Table.Row>
         ))}

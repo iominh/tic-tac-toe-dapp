@@ -65,18 +65,51 @@ export function Game({ id }: GameProps) {
 
     async function fetchHistory() {
       try {
-        // Fetch past events
+        // Query all events from this package
         const events = await suiClient.queryEvents({
-          query: { Package: packageId },
-          limit: 50, // Adjust as needed
+          query: {
+            Package: packageId,
+          },
+          order: "descending",
+          limit: 50,
         });
 
-        // Filter and sort events
-        const gameResults = events.data
-          .map((event) => event.parsedJson as GameResult)
-          .filter((result) => result.gameId === id)
-          .reverse();
+        console.log("Package ID:", packageId);
+        console.log("Game ID:", id);
+        console.log("Raw events:", events.data);
 
+        const gameResults = events.data
+          .filter((event) => {
+            // Check if it's our event type
+            const isGameResult =
+              event.type === `${packageId}::game::GameResult`;
+            console.log(
+              "Event type:",
+              event.type,
+              "Is game result:",
+              isGameResult,
+            );
+
+            if (!isGameResult) return false;
+
+            const result = event.parsedJson as GameResult;
+            const matchesGame = result.gameId === id;
+            console.log(
+              "Event game ID:",
+              result.gameId,
+              "Matches current game:",
+              matchesGame,
+            );
+
+            return matchesGame;
+          })
+          .map((event) => {
+            const result = event.parsedJson as GameResult;
+            console.log("Adding result to history:", result);
+            return result;
+          });
+
+        console.log("Final game results:", gameResults);
         setGameHistory(gameResults);
       } catch (e) {
         console.error("Failed to fetch game history:", e);
@@ -88,11 +121,15 @@ export function Game({ id }: GameProps) {
         unsubscribe = await suiClient.subscribeEvent({
           filter: {
             Package: packageId,
-            MoveEventType: `${packageId}::game::GameResult`,
           },
           onMessage(event: any) {
+            if (event.type !== `${packageId}::game::GameResult`) return;
+
+            console.log("New event received:", event);
             const result = event.parsedJson as GameResult;
+
             if (result.gameId === id) {
+              console.log("Adding new result to history:", result);
               setGameHistory((prev) => [result, ...prev]);
             }
           },

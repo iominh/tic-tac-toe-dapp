@@ -28,6 +28,7 @@ module tic_tac_toe::game {
         status: u8
     }
 
+    // Event that will be emitted when a game ends
     public struct GameResult has copy, drop {
         game_id: address,
         player_x: address,
@@ -75,6 +76,7 @@ module tic_tac_toe::game {
         // Check win condition
         if (check_winner(&game.board, player_piece)) {
             game.status = GAME_WON;
+            // Emit win event
             event::emit(GameResult {
                 game_id: object::uid_to_address(&game.id),
                 player_x: game.player_x,
@@ -84,6 +86,7 @@ module tic_tac_toe::game {
             });
         } else if (is_board_full(&game.board)) {
             game.status = GAME_DRAW;
+            // Emit draw event
             event::emit(GameResult {
                 game_id: object::uid_to_address(&game.id),
                 player_x: game.player_x,

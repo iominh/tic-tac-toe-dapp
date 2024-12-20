@@ -83,7 +83,7 @@ export function GameBoard({
               ? isMovePending
                 ? "Making move..."
                 : "Your Turn!"
-              : "Opponent's Turn"}
+              : "Waiting on Opponent's Turn"}
         </Text>
       </div>
     </div>
