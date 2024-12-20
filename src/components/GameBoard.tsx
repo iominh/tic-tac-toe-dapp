@@ -18,6 +18,17 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 8)}...${address.slice(-4)}`;
 }
 
+const WINNING_LINES = [
+  [0, 1, 2], // Rows
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6], // Columns
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8], // Diagonals
+  [2, 4, 6],
+];
+
 export function GameBoard({
   game,
   onMove,
@@ -56,8 +67,25 @@ export function GameBoard({
     return value === 1 ? "X" : "O";
   };
 
-  const isWinningCell = (_index: number): boolean => {
-    return false; // TODO: implement with actual game state
+  const winningLine = useMemo(() => {
+    if (game.status !== 2) return null; // Not a win
+
+    // Check each possible winning line
+    for (const line of WINNING_LINES) {
+      const [a, b, c] = line;
+      if (
+        game.board[a] &&
+        game.board[a] === game.board[b] &&
+        game.board[a] === game.board[c]
+      ) {
+        return line;
+      }
+    }
+    return null;
+  }, [game.board, game.status]);
+
+  const isWinningCell = (index: number): boolean => {
+    return winningLine?.includes(index) ?? false;
   };
 
   const handleCopyLink = () => {
@@ -95,7 +123,7 @@ export function GameBoard({
                 size="1"
                 className="transition-colors shrink-0"
               >
-                {copied ? "Copied!" : "Copy link"}
+                {copied ? "Copied!" : "Copy link to share"}
               </Button>
             </Flex>
           </Flex>
@@ -121,11 +149,11 @@ export function GameBoard({
             onClick={() =>
               !disabled && isMyTurn && value === 0 && onMove(index)
             }
-            className={`aspect-square flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-200 ${
+            className={`aspect-square flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-all duration-500 ${
               value === 0 && isMyTurn && !disabled
                 ? "cursor-pointer hover:bg-gray-a4"
                 : ""
-            } ${isWinningCell(index) ? "bg-blue-500/20 border-blue-500" : ""}`}
+            } ${isWinningCell(index) ? "bg-blue-500/20 border-blue-500 animate-pulse" : ""}`}
             style={{
               borderColor: isWinningCell(index)
                 ? "var(--blue-a8)"
