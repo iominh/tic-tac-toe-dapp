@@ -36,6 +36,7 @@ function parseGameResult(fields: Record<string, any>): GameResult {
     winner: fields.winner,
     status: fields.status as GameStatus,
     timestamp: Date.now(),
+    betAmount: fields.bet_amount || 0,
   };
 }
 
