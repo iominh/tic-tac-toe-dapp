@@ -38,55 +38,64 @@ module tic_tac_toe::game {
     }
 
     public fun create_game(ctx: &mut TxContext) {
+        let creator = tx_context::sender(ctx);
         let game = Game {
             id: object::new(ctx),
             board: vector[0, 0, 0, 0, 0, 0, 0, 0, 0],
-            player_x: tx_context::sender(ctx),
+            player_x: creator,
             player_o: @0x0,
-            current_turn: tx_context::sender(ctx),
+            current_turn: creator,
             status: GAME_ACTIVE
         };
         transfer::share_object(game);
     }
 
     public fun join_game(game: &mut Game, ctx: &TxContext) {
+        let joiner = tx_context::sender(ctx);
         assert!(game.player_o == @0x0, EGameNotFull);
-        assert!(tx_context::sender(ctx) != game.player_x, EInvalidPlayer);
-        game.player_o = tx_context::sender(ctx);
+        assert!(joiner != game.player_x, EInvalidPlayer);
+        
+        // Set player O
+        game.player_o = joiner;
+        
+        // Ensure X goes first and current_turn is never zero address
+        game.current_turn = game.player_x;
     }
 
     public fun make_move(game: &mut Game, position: u8, ctx: &TxContext) {
+        let sender = tx_context::sender(ctx);
+        
         // Validate move
         assert!(game.status == GAME_ACTIVE, EGameOver);
         assert!(position < 9, EInvalidMove);
         assert!(vector::borrow(&game.board, (position as u64)) == &0, ESpotTaken);
-        assert!(tx_context::sender(ctx) == game.current_turn, ENotYourTurn);
+        assert!(sender == game.current_turn, ENotYourTurn);
         
         // Make move
-        let player_piece = if (tx_context::sender(ctx) == game.player_x) 1 else 2;
+        let player_piece = if (sender == game.player_x) 1 else 2;
         *vector::borrow_mut(&mut game.board, (position as u64)) = player_piece;
 
-        // Update turn
-        game.current_turn = if (tx_context::sender(ctx) == game.player_x) {
-            game.player_o
-        } else {
-            game.player_x
+        // Update turn - ensure we never set to zero address
+        if (sender == game.player_x && game.player_o != @0x0) {
+            // Only switch to O if they've joined
+            game.current_turn = game.player_o;
+        } else if (sender == game.player_o) {
+            game.current_turn = game.player_x;
         };
+        // If O hasn't joined, keep turn as X
 
         // Check win condition
         if (check_winner(&game.board, player_piece)) {
             game.status = GAME_WON;
-            // Emit win event
             event::emit(GameResult {
                 game_id: object::uid_to_address(&game.id),
                 player_x: game.player_x,
                 player_o: game.player_o,
-                winner: option::some(tx_context::sender(ctx)),
+                winner: option::some(sender),
                 status: GAME_WON
             });
         } else if (is_board_full(&game.board)) {
             game.status = GAME_DRAW;
-            // Emit draw event
             event::emit(GameResult {
                 game_id: object::uid_to_address(&game.id),
                 player_x: game.player_x,

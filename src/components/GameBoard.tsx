@@ -22,8 +22,27 @@ export function GameBoard({
   const currentAccount = useCurrentAccount();
 
   const isMyTurn = useMemo(() => {
-    return currentAccount?.address === game.currentTurn;
-  }, [currentAccount, game.currentTurn]);
+    if (!currentAccount) return false;
+    const myAddress = currentAccount.address;
+
+    // Check if it's my turn based on current turn and my player role
+    const amPlayerX = myAddress === game.playerX;
+    const amPlayerO = myAddress === game.playerO;
+    const isXTurn = game.currentTurn === game.playerX;
+
+    console.log("Turn Debug:", {
+      myAddress,
+      currentTurn: game.currentTurn,
+      playerX: game.playerX,
+      playerO: game.playerO,
+      amPlayerX,
+      amPlayerO,
+      isXTurn,
+      canMove: (amPlayerX && isXTurn) || (amPlayerO && !isXTurn),
+    });
+
+    return (amPlayerX && isXTurn) || (amPlayerO && !isXTurn);
+  }, [currentAccount, game.currentTurn, game.playerX, game.playerO]);
 
   const getSymbol = (value: number) => {
     if (value === 0) return "";
@@ -36,6 +55,30 @@ export function GameBoard({
 
   return (
     <div className="select-none">
+      <div className="text-center mb-4">
+        <Text size="2" color="gray">
+          Game State:
+        </Text>
+        <Text size="2" color="gray">
+          Player X: {game.playerX.slice(0, 8)}...
+        </Text>
+        <Text size="2" color="gray">
+          Player O:{" "}
+          {game.playerO === "0x0"
+            ? "Waiting for player"
+            : game.playerO.slice(0, 8) + "..."}
+        </Text>
+        <Text size="2" color="gray">
+          Current Turn:{" "}
+          {game.currentTurn === "0x0"
+            ? "Not started"
+            : game.currentTurn.slice(0, 8) + "..."}
+        </Text>
+        <Text size="2" color="gray">
+          Your Address: {currentAccount?.address.slice(0, 8)}...
+        </Text>
+      </div>
+
       <div className="grid grid-cols-3 gap-4 mb-2">
         {game.board.map((value, index) => (
           <Box

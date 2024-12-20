@@ -49,6 +49,14 @@ export function Game({ id }: GameProps) {
     if (!gameData?.data?.content) return undefined;
 
     const raw = gameData.data.content as unknown as RawGameData;
+    console.log("Raw game data:", raw);
+
+    // Validate fields
+    if (!raw.fields.player_x || !raw.fields.current_turn) {
+      console.error("Invalid game data:", raw.fields);
+      return undefined;
+    }
+
     return {
       id: raw.fields.id.id,
       board: raw.fields.board,
