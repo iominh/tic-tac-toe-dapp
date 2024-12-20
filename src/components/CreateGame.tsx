@@ -7,13 +7,9 @@ import ClipLoader from "react-spinners/ClipLoader";
 
 interface CreateGameProps {
   onGameCreated: (id: string) => void;
-  onLoadingChange?: (loading: boolean) => void;
 }
 
-export function CreateGame({
-  onGameCreated,
-  onLoadingChange,
-}: CreateGameProps) {
+export function CreateGame({ onGameCreated }: CreateGameProps) {
   const packageId = useNetworkVariable("ticTacToePackageId");
   const suiClient = useSuiClient();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();

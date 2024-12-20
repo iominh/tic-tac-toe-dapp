@@ -11,6 +11,7 @@ import { useNetworkVariable } from "../networkConfig";
 import { Game as GameType, GameResult, GameStatus } from "../types";
 import { GameBoard } from "./GameBoard";
 import { GameHistory } from "./GameHistory";
+import type { GameEvent } from "@mysten/sui.js/client";
 
 interface GameProps {
   id: string;
@@ -37,7 +38,6 @@ export function Game({ id, onLoadingChange }: GameProps) {
   const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<number | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
 
   // Use page progress bar only for initial load
   const { data: gameData, refetch } = useSuiClientQuery("getObject", {
@@ -82,7 +82,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
   // Efficient polling with proper cleanup and error handling
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     async function pollGameState() {
       if (!mounted) return;
@@ -138,9 +138,12 @@ export function Game({ id, onLoadingChange }: GameProps) {
           .filter((event) => {
             const isGameResult =
               event.type === `${packageId}::game::GameResult`;
-            return isGameResult && event.parsedJson.gameId === id;
+            if (!isGameResult) return false;
+
+            const result = event.parsedJson as unknown as GameResult;
+            return result.gameId === id;
           })
-          .map((event) => event.parsedJson as GameResult);
+          .map((event) => event.parsedJson as unknown as GameResult);
 
         setGameHistory(gameResults);
       } catch (e) {
@@ -244,13 +247,6 @@ export function Game({ id, onLoadingChange }: GameProps) {
         </Text>
       )}
 
-      {/* Add polling indicator */}
-      {isPolling && (
-        <Text size="1" color="gray" className="animate-pulse">
-          Updating...
-        </Text>
-      )}
-
       {canJoin ? (
         <Flex direction="column" gap="4" align="center">
           <Text>This game needs another player!</Text>
@@ -260,7 +256,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
         <GameBoard
           game={game}
           onMove={makeMove}
-          disabled={game.status !== 0 || isPolling}
+          disabled={game.status !== 0}
           isMovePending={pendingMove !== null}
           pendingMoveIndex={pendingMove}
         />
