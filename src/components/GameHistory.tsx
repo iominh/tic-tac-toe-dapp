@@ -1,17 +1,23 @@
 import { useSuiClient } from "@mysten/dapp-kit";
 import { Table } from "@radix-ui/themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { GameResult, GameStatus } from "../types";
 import { Link } from "react-router-dom";
 
 function parseGameResult(fields: Record<string, any>): GameResult {
+  let winner = null;
+  if (fields.winner && !fields.winner.none) {
+    winner = fields.winner.some?.toLowerCase() || null;
+  }
+
   return {
     gameId: fields.game_id.toLowerCase(),
     playerX: fields.player_x.toLowerCase(),
     playerO: fields.player_o.toLowerCase(),
-    winner: fields.winner.none ? null : fields.winner,
+    winner,
     status: fields.status as GameStatus,
+    timestamp: Date.now(),
   };
 }
 
@@ -21,33 +27,64 @@ export function GameHistory() {
   const [games, setGames] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchAllGameResults() {
-      try {
-        const events = await suiClient.queryEvents({
-          query: {
-            MoveEventType: `${packageId}::game::GameResult`,
-          },
-          order: "descending",
-          limit: 50,
-        });
+  // Fetch all game results
+  const fetchGameResults = useCallback(async () => {
+    try {
+      const events = await suiClient.queryEvents({
+        query: {
+          MoveEventType: `${packageId}::game::GameResult`,
+        },
+        order: "descending",
+        limit: 50,
+      });
 
-        console.log("All game results:", events.data);
+      const results = events.data.map((event) =>
+        parseGameResult(event.parsedJson as Record<string, any>),
+      );
 
-        const results = events.data.map((event) =>
-          parseGameResult(event.parsedJson as Record<string, any>),
+      setGames((prev) => {
+        // Check for new games
+        const newGames = results.filter(
+          (result) => !prev.some((game) => game.gameId === result.gameId),
         );
+        if (newGames.length > 0) {
+          // Add new games with animation
+          return [...newGames, ...prev];
+        }
+        return prev;
+      });
 
-        setGames(results);
-      } catch (e) {
-        console.error("Failed to fetch game history:", e);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
+    } catch (e) {
+      console.error("Failed to fetch game history:", e);
+      setLoading(false);
+    }
+  }, [packageId, suiClient]);
+
+  // Poll for updates
+  useEffect(() => {
+    let mounted = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    async function pollGameResults() {
+      if (!mounted) return;
+
+      await fetchGameResults();
+
+      // Schedule next poll
+      timeoutId = setTimeout(pollGameResults, 2000); // Poll every 2 seconds
     }
 
-    fetchAllGameResults();
-  }, [packageId, suiClient]);
+    // Initial fetch
+    pollGameResults();
+
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [fetchGameResults]);
 
   if (loading) {
     return (
@@ -73,8 +110,11 @@ export function GameHistory() {
       </Table.Header>
 
       <Table.Body>
-        {games.map((game, index) => (
-          <Table.Row key={`${game.gameId}-${index}`}>
+        {games.map((game) => (
+          <Table.Row
+            key={`${game.gameId}-${game.timestamp}`}
+            className="animate-fade-in"
+          >
             <Table.Cell className="font-mono">
               <Link
                 to={`/game/${game.gameId}`}
