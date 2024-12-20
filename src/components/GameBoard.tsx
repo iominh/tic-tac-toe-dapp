@@ -176,12 +176,16 @@ function GameStatus({ game }: { game: GameType }) {
   if (game.status === 2) {
     const winner = game.currentTurn;
     const isPlayerX = winner === game.playerX;
+    const betInfo =
+      game.betAmount > 0
+        ? ` and won ${(game.betAmount * 2) / 1_000_000_000} SUI!`
+        : "!";
+
     return (
       <Text size="3" align="center" className="mb-4">
         <span className={isPlayerX ? "text-blue-500" : "text-red-500"}>
-          {isPlayerX ? "Player X" : "Player O"}
-        </span>{" "}
-        won!
+          Player {isPlayerX ? "X" : "O"} Won{betInfo}
+        </span>
         <br />
         <span className="text-sm text-gray-500 font-mono">
           {winner.slice(0, 10)}...{winner.slice(-4)}

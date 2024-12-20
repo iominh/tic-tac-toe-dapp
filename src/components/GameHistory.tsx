@@ -1,5 +1,5 @@
 import { useSuiClient } from "@mysten/dapp-kit";
-import { Table } from "@radix-ui/themes";
+import { Table, Text } from "@radix-ui/themes";
 import { useEffect, useState, useCallback } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { GameResult, GameStatus } from "../types";
@@ -15,7 +15,47 @@ function parseGameResult(fields: Record<string, any>): GameResult {
     winner: fields.winner,
     status: fields.status as GameStatus,
     timestamp: Date.now(),
+    betAmount: fields.bet_amount || 0,
   };
+}
+
+function formatGameResult(result: GameResult) {
+  if (result.winner) {
+    const isPlayerX = result.winner === result.playerX;
+    const betInfo =
+      result.betAmount > 0 ? (
+        <>
+          {" "}
+          <span className="text-green-500">
+            (+{(result.betAmount * 2) / 1_000_000_000} SUI)
+          </span>
+        </>
+      ) : (
+        ""
+      );
+
+    return (
+      <span>
+        <span className={isPlayerX ? "text-blue-500" : "text-red-500"}>
+          Player {isPlayerX ? "X" : "O"} Won
+        </span>
+        {betInfo}
+      </span>
+    );
+  }
+
+  // Handle draw with bet return info
+  const betInfo =
+    result.betAmount > 0 ? (
+      <>
+        {" "}
+        <span className="text-gray-400">(Bets Returned)</span>
+      </>
+    ) : (
+      ""
+    );
+
+  return <span>Draw{betInfo}</span>;
 }
 
 export function GameHistory() {
@@ -120,31 +160,7 @@ export function GameHistory() {
               {game.playerO.slice(0, 6)}...
             </Table.Cell>
             <Table.Cell>
-              {game.status === 1 ? (
-                "Draw"
-              ) : game.status === 2 && game.winner ? (
-                <span>
-                  {game.winner === game.playerX ? (
-                    <span>
-                      <span className="text-blue-500">Player X</span> won!
-                      <br />
-                      <span className="text-sm text-gray-500 font-mono">
-                        {game.playerX.slice(0, 10)}...{game.playerX.slice(-4)}
-                      </span>
-                    </span>
-                  ) : (
-                    <span>
-                      <span className="text-red-500">Player O</span> won!
-                      <br />
-                      <span className="text-sm text-gray-500 font-mono">
-                        {game.playerO.slice(0, 10)}...{game.playerO.slice(-4)}
-                      </span>
-                    </span>
-                  )}
-                </span>
-              ) : (
-                "Complete"
-              )}
+              <Text size="2">{formatGameResult(game)}</Text>
             </Table.Cell>
           </Table.Row>
         ))}

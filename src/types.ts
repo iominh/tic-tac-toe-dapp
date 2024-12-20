@@ -16,5 +16,6 @@ export interface GameResult {
   playerO: string;
   winner: string | null;
   status: GameStatus;
-  timestamp: number; // Add timestamp for animation
+  timestamp: number;
+  betAmount: number;
 }

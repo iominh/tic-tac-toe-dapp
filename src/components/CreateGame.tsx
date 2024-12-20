@@ -67,7 +67,8 @@ export function CreateGame({ onGameCreated }: CreateGameProps) {
 
               // Look for the created Game object
               const createdGameId = txDetails.effects?.created?.find(
-                (item) => item.owner?.Shared !== undefined, // Check for Shared ownership structure
+                (item) =>
+                  typeof item.owner === "object" && "Shared" in item.owner,
               )?.reference?.objectId;
 
               if (createdGameId) {
