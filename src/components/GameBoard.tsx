@@ -31,7 +31,6 @@ export function GameBoard({
   pendingMoveIndex,
 }: GameBoardProps) {
   const currentAccount = useCurrentAccount();
-  const [, setCopied] = useState(false);
 
   const isMyTurn = useMemo(() => {
     if (!currentAccount) return false;
@@ -81,18 +80,6 @@ export function GameBoard({
   const isWinningCell = (index: number): boolean => {
     return winningLine?.includes(index) ?? false;
   };
-
-  const handleCopyLink = () => {
-    const gameUrl = `${window.location.origin}${window.location.pathname}#${game.id}`;
-    navigator.clipboard.writeText(gameUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const isWaitingForPlayer =
-    game.playerO ===
-    "0x0000000000000000000000000000000000000000000000000000000000000000";
-  const gameUrl = `${window.location.origin}${window.location.pathname}#${game.id}`;
 
   return (
     <div className="select-none mt-8">
