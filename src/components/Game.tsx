@@ -22,6 +22,7 @@ interface RawGameData {
     player_o: string;
     current_turn: string;
     status: number;
+    bet_amount: number;
   };
 }
 
@@ -94,6 +95,7 @@ export function Game({
       playerO: raw.fields.player_o,
       currentTurn: raw.fields.current_turn,
       status: raw.fields.status as GameStatus,
+      betAmount: raw.fields.bet_amount,
     } satisfies GameType;
   }, [gameData]);
 
@@ -225,30 +227,37 @@ export function Game({
 
   const joinGame = useCallback(() => {
     if (!game) return;
-
     const tx = new Transaction();
-    tx.moveCall({
-      arguments: [tx.object(gameId)],
-      target: `${packageId}::game::join_game`,
-    });
+
+    // Split coins from gas object if bet amount > 0
+    if (game.betAmount > 0) {
+      const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(game.betAmount)]);
+      tx.moveCall({
+        arguments: [tx.object(gameId), coin],
+        target: `${packageId}::game::join_game`,
+      });
+    } else {
+      // Join with zero bet
+      const [zeroCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(0)]);
+      tx.moveCall({
+        arguments: [tx.object(gameId), zeroCoin],
+        target: `${packageId}::game::join_game`,
+      });
+    }
 
     signAndExecute(
-      {
-        transaction: tx,
-      },
+      { transaction: tx },
       {
         onSuccess: async ({ digest }) => {
-          try {
-            await suiClient.waitForTransaction({ digest });
-            await refetch();
-          } catch (e) {
-            setError(`Failed to join game: ${e}`);
-          }
+          await suiClient.waitForTransaction({ digest });
+          await refetch();
         },
-        onError: (e) => setError(`Failed to join: ${e.message}`),
+        onError: (e) => {
+          setError(`Failed to join game: ${e.message}`);
+        },
       },
     );
-  }, [gameId, packageId, refetch, signAndExecute, suiClient, game]);
+  }, [gameId, game?.betAmount, packageId, signAndExecute, suiClient, refetch]);
 
   const makeMove = useCallback(
     (position: number) => {
@@ -306,6 +315,20 @@ export function Game({
       {canJoin ? (
         <Flex direction="column" gap="4" align="center">
           <Text>This game needs another player!</Text>
+          {game.betAmount > 0 ? (
+            <Flex direction="column" gap="2" align="center">
+              <Text color="gray">
+                Required bet: {game.betAmount / 1_000_000_000} SUI
+              </Text>
+              <Text size="2" color="gray">
+                Winner takes all
+              </Text>
+            </Flex>
+          ) : (
+            <Text size="2" color="gray">
+              Friendly game (no bet)
+            </Text>
+          )}
           <Button onClick={joinGame}>Join as Player O</Button>
         </Flex>
       ) : (

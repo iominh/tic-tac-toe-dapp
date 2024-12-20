@@ -7,6 +7,7 @@ export interface Game {
   playerO: string;
   currentTurn: string;
   status: GameStatus;
+  betAmount: number;
 }
 
 export interface GameResult {

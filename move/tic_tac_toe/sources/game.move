@@ -3,6 +3,8 @@ module tic_tac_toe::game {
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
     use sui::event;
+    use sui::coin::{Self, Coin};
+    use sui::sui::SUI;
     use std::vector;
     use std::option;
 
@@ -16,6 +18,7 @@ module tic_tac_toe::game {
     const EPiecePlacementFailed: u64 = 100;
     const EGameNotActive: u64 = 101;
     const EWinCheckFailed: u64 = 102;
+    const EInvalidBetAmount: u64 = 103;
 
     // Game status
     const GAME_ACTIVE: u8 = 0;
@@ -28,7 +31,10 @@ module tic_tac_toe::game {
         player_x: address,
         player_o: address,
         current_turn: address,
-        status: u8
+        status: u8,
+        bet_amount: u64,  // Amount in SUI
+        player_x_bet: Coin<SUI>,
+        player_o_bet: option::Option<Coin<SUI>>
     }
 
     // Events
@@ -42,7 +48,8 @@ module tic_tac_toe::game {
 
     public struct GameCreated has copy, drop {
         game_id: address,
-        player_x: address
+        player_x: address,
+        bet_amount: u64
     }
 
     public struct PlayerJoined has copy, drop {
@@ -83,10 +90,11 @@ module tic_tac_toe::game {
         board: vector<u8>
     }
 
-    public fun create_game(ctx: &mut TxContext) {
+    public fun create_game(bet: Coin<SUI>, ctx: &mut TxContext) {
         let creator = tx_context::sender(ctx);
         let game_id = object::new(ctx);
         let game_addr = object::uid_to_address(&game_id);
+        let bet_amount = coin::value(&bet);
 
         let game = Game {
             id: game_id,
@@ -94,7 +102,10 @@ module tic_tac_toe::game {
             player_x: creator,
             player_o: @0x0,
             current_turn: creator,
-            status: GAME_ACTIVE
+            status: GAME_ACTIVE,
+            bet_amount,
+            player_x_bet: bet,
+            player_o_bet: option::none()
         };
 
         // Debug assertion
@@ -102,19 +113,22 @@ module tic_tac_toe::game {
         
         event::emit(GameCreated {
             game_id: game_addr,
-            player_x: creator
+            player_x: creator,
+            bet_amount
         });
 
         transfer::share_object(game);
     }
 
-    public fun join_game(game: &mut Game, ctx: &TxContext) {
+    public fun join_game(game: &mut Game, bet: Coin<SUI>, ctx: &TxContext) {
         let joiner = tx_context::sender(ctx);
         assert!(game.player_o == @0x0, EGameNotFull);
         assert!(joiner != game.player_x, EInvalidPlayer);
+        assert!(coin::value(&bet) == game.bet_amount, EInvalidBetAmount);
         
         game.player_o = joiner;
         game.current_turn = game.player_o;
+        option::fill(&mut game.player_o_bet, bet);
 
         event::emit(PlayerJoined {
             game_id: object::uid_to_address(&game.id),
@@ -122,7 +136,7 @@ module tic_tac_toe::game {
         });
     }
 
-    public fun make_move(game: &mut Game, position: u8, ctx: &TxContext) {
+    public fun make_move(game: &mut Game, position: u8, ctx: &mut TxContext) {
         let sender = tx_context::sender(ctx);
         let game_id = object::uid_to_address(&game.id);
         
@@ -173,6 +187,7 @@ module tic_tac_toe::game {
 
         if (is_winner) {
             game.status = GAME_WON;
+            handle_game_end(game, ctx);
             event::emit(GameResult {
                 game_id,
                 player_x: game.player_x,
@@ -186,6 +201,7 @@ module tic_tac_toe::game {
         // Then check draw
         if (is_board_full(&game.board)) {
             game.status = GAME_DRAW;
+            handle_game_end(game, ctx);
             event::emit(GameResult {
                 game_id,
                 player_x: game.player_x,
@@ -271,5 +287,46 @@ module tic_tac_toe::game {
 
     public fun get_players(game: &Game): (address, address) {
         (game.player_x, game.player_o)
+    }
+
+    // Update game end logic to handle bets
+    fun handle_game_end(game: &mut Game, ctx: &mut TxContext) {
+        if (game.status == GAME_WON) {
+            let winner = if (game.current_turn == game.player_x) {
+                game.player_x
+            } else {
+                game.player_o
+            };
+            
+            // Create new coin for total
+            let mut total_bet = coin::zero<SUI>(ctx);
+            
+            // Take ownership of X's bet
+            let x_bet_value = coin::value(&game.player_x_bet);
+            coin::join(&mut total_bet, coin::split(&mut game.player_x_bet, x_bet_value, ctx));
+            
+            // Take ownership of O's bet
+            if (option::is_some(&game.player_o_bet)) {
+                let o_bet = option::extract(&mut game.player_o_bet);
+                coin::join(&mut total_bet, o_bet);
+            };
+            
+            // Transfer total to winner
+            transfer::public_transfer(total_bet, winner);
+        } else if (game.status == GAME_DRAW) {
+            // Return bets to players
+            let x_bet_value = coin::value(&game.player_x_bet);
+            transfer::public_transfer(
+                coin::split(&mut game.player_x_bet, x_bet_value, ctx),
+                game.player_x
+            );
+            
+            if (option::is_some(&game.player_o_bet)) {
+                transfer::public_transfer(
+                    option::extract(&mut game.player_o_bet),
+                    game.player_o
+                );
+            };
+        };
     }
 } 
