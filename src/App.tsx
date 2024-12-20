@@ -80,7 +80,6 @@ function App() {
                     window.location.hash = id;
                     setGameId(id);
                   }}
-                  onLoadingChange={setLoading}
                 />
               )
             ) : (
