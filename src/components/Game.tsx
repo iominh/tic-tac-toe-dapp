@@ -35,6 +35,7 @@ export function Game({ id }: GameProps) {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [pendingMove, setPendingMove] = useState<number | null>(null);
 
   const { data: gameData, refetch } = useSuiClientQuery("getObject", {
     id,
@@ -109,6 +110,7 @@ export function Game({ id }: GameProps) {
 
   const makeMove = useCallback(
     (position: number) => {
+      setPendingMove(position);
       const tx = new Transaction();
       tx.moveCall({
         arguments: [tx.object(id), tx.pure.u8(position)],
@@ -121,9 +123,15 @@ export function Game({ id }: GameProps) {
         },
         {
           onSuccess: ({ digest }) => {
-            suiClient.waitForTransaction({ digest }).then(() => refetch());
+            suiClient.waitForTransaction({ digest }).then(() => {
+              refetch();
+              setPendingMove(null);
+            });
           },
-          onError: (e) => setError(`Failed to make move: ${e.message}`),
+          onError: (e) => {
+            setError(`Failed to make move: ${e.message}`);
+            setPendingMove(null);
+          },
         },
       );
     },
@@ -154,7 +162,13 @@ export function Game({ id }: GameProps) {
       {canJoin ? (
         <Button onClick={joinGame}>Join Game</Button>
       ) : (
-        <GameBoard game={game} onMove={makeMove} disabled={game.status !== 0} />
+        <GameBoard
+          game={game}
+          onMove={makeMove}
+          disabled={game.status !== 0}
+          isMovePending={pendingMove !== null}
+          pendingMoveIndex={pendingMove}
+        />
       )}
 
       <div className="w-full max-w-2xl">

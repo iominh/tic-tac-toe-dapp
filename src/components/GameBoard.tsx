@@ -1,15 +1,24 @@
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Box, Button, Flex, Text } from "@radix-ui/themes";
+import { Box, Text } from "@radix-ui/themes";
 import { Game } from "../types";
 import { useMemo } from "react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface GameBoardProps {
   game: Game;
   onMove: (position: number) => void;
   disabled?: boolean;
+  isMovePending?: boolean;
+  pendingMoveIndex?: number;
 }
 
-export function GameBoard({ game, onMove, disabled }: GameBoardProps) {
+export function GameBoard({
+  game,
+  onMove,
+  disabled,
+  isMovePending = false,
+  pendingMoveIndex,
+}: GameBoardProps) {
   const currentAccount = useCurrentAccount();
 
   const isMyTurn = useMemo(() => {
@@ -22,8 +31,6 @@ export function GameBoard({ game, onMove, disabled }: GameBoardProps) {
   };
 
   const isWinningCell = (index: number): boolean => {
-    // Add logic to determine if this cell is part of winning line
-    // This would need to be added to your Game type and passed from the backend
     return false; // TODO: implement with actual game state
   };
 
@@ -51,13 +58,17 @@ export function GameBoard({ game, onMove, disabled }: GameBoardProps) {
                   : "var(--gray-a2)",
             }}
           >
-            <span
-              className={`transform transition-all duration-200 ${
-                value ? "scale-100" : "scale-0"
-              } ${isWinningCell(index) ? "text-blue-500" : ""}`}
-            >
-              {getSymbol(value)}
-            </span>
+            {isMovePending && index === pendingMoveIndex ? (
+              <ClipLoader size={32} color="currentColor" />
+            ) : (
+              <span
+                className={`transform transition-all duration-200 ${
+                  value ? "scale-100" : "scale-0"
+                } ${isWinningCell(index) ? "text-blue-500" : ""}`}
+              >
+                {getSymbol(value)}
+              </span>
+            )}
           </Box>
         ))}
       </div>
@@ -69,7 +80,9 @@ export function GameBoard({ game, onMove, disabled }: GameBoardProps) {
               ? "Game Draw!"
               : "Winner!"
             : isMyTurn
-              ? "Your Turn!"
+              ? isMovePending
+                ? "Making move..."
+                : "Your Turn!"
               : "Opponent's Turn"}
         </Text>
       </div>
