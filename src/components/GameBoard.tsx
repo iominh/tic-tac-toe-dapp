@@ -76,15 +76,12 @@ export function GameBoard({
     <div className="select-none">
       <div className="text-center mb-4 h-24 flex flex-col justify-center">
         <Text size="2" color="gray">
-          Game State:
-        </Text>
-        <Text size="2" color="gray">
           Player X: {formatAddress(game.playerX)}
         </Text>
         {isWaitingForPlayer ? (
           <Flex direction="column" align="center" gap="2">
             <Text size="2" color="gray">
-              Waiting for friend to join...
+              Waiting for opponent to join...
             </Text>
             <Flex align="center" gap="2" className="w-full max-w-md">
               <Text
@@ -98,7 +95,7 @@ export function GameBoard({
                 size="1"
                 className="transition-colors shrink-0"
               >
-                {copied ? "Copied!" : "Copy link to share with friend"}
+                {copied ? "Copied!" : "Copy link"}
               </Button>
             </Flex>
           </Flex>
