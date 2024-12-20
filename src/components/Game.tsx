@@ -14,6 +14,7 @@ import { GameHistory } from "./GameHistory";
 
 interface GameProps {
   id: string;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 interface RawGameData {
@@ -28,7 +29,7 @@ interface RawGameData {
   };
 }
 
-export function Game({ id }: GameProps) {
+export function Game({ id, onLoadingChange }: GameProps) {
   const packageId = useNetworkVariable("ticTacToePackageId");
   const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
@@ -38,6 +39,7 @@ export function Game({ id }: GameProps) {
   const [pendingMove, setPendingMove] = useState<number | null>(null);
   const [isPolling, setIsPolling] = useState(false);
 
+  // Use page progress bar only for initial load
   const { data: gameData, refetch } = useSuiClientQuery("getObject", {
     id,
     options: {
@@ -46,15 +48,14 @@ export function Game({ id }: GameProps) {
     },
   });
 
-  // Define refetchWithIndicator before it's used
-  const refetchWithIndicator = useCallback(async () => {
-    setIsPolling(true);
-    try {
-      await refetch();
-    } finally {
-      setIsPolling(false);
+  // Handle loading state based on game data
+  useEffect(() => {
+    if (!gameData) {
+      onLoadingChange?.(true);
+    } else {
+      onLoadingChange?.(false);
     }
-  }, [refetch]);
+  }, [gameData, onLoadingChange]);
 
   const game = useMemo(() => {
     if (!gameData?.data?.content) return undefined;
@@ -180,7 +181,7 @@ export function Game({ id }: GameProps) {
         onSuccess: async ({ digest }) => {
           try {
             await suiClient.waitForTransaction({ digest });
-            await refetchWithIndicator();
+            await refetch();
           } catch (e) {
             setError(`Failed to join game: ${e}`);
           }
@@ -188,11 +189,13 @@ export function Game({ id }: GameProps) {
         onError: (e) => setError(`Failed to join: ${e.message}`),
       },
     );
-  }, [id, packageId, refetchWithIndicator, signAndExecute, suiClient, game]);
+  }, [id, packageId, refetch, signAndExecute, suiClient, game]);
 
   const makeMove = useCallback(
     (position: number) => {
       setPendingMove(position);
+      setError(null);
+
       const tx = new Transaction();
       tx.moveCall({
         arguments: [tx.object(id), tx.pure.u8(position)],
@@ -207,7 +210,8 @@ export function Game({ id }: GameProps) {
           onSuccess: async ({ digest }) => {
             try {
               await suiClient.waitForTransaction({ digest });
-              await refetchWithIndicator();
+              await refetch();
+              setError(null);
             } catch (e) {
               setError(`Error processing move: ${e}`);
             } finally {
@@ -221,7 +225,7 @@ export function Game({ id }: GameProps) {
         },
       );
     },
-    [id, packageId, refetchWithIndicator, signAndExecute, suiClient],
+    [id, packageId, refetch, signAndExecute, suiClient],
   );
 
   if (!game) {

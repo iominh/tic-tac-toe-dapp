@@ -109,7 +109,7 @@ export function GameBoard({
         {isWaitingForPlayer ? (
           <Flex direction="column" align="center" gap="2">
             <Text size="2" color="gray">
-              Waiting for opponent to join...
+              Waiting for friend to join...
             </Text>
             <Flex align="center" gap="2" className="w-full max-w-md">
               <Text
@@ -123,7 +123,7 @@ export function GameBoard({
                 size="1"
                 className="transition-colors shrink-0"
               >
-                {copied ? "Copied!" : "Copy link to share"}
+                {copied ? "Copied!" : "Copy link to share with friend"}
               </Button>
             </Flex>
           </Flex>

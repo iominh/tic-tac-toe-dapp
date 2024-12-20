@@ -32,6 +32,15 @@
   }
 }
 
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
 }
@@ -54,4 +63,14 @@
 
 .border-blue-500 {
   border-color: var(--blue-9);
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--blue-9);
+  animation: progress 1.5s ease-in-out infinite;
 }

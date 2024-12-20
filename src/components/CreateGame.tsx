@@ -6,10 +6,14 @@ import { Transaction } from "@mysten/sui/transactions";
 import ClipLoader from "react-spinners/ClipLoader";
 
 interface CreateGameProps {
-  onGameCreated: (gameId: string) => void;
+  onGameCreated: (id: string) => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export function CreateGame({ onGameCreated }: CreateGameProps) {
+export function CreateGame({
+  onGameCreated,
+  onLoadingChange,
+}: CreateGameProps) {
   const packageId = useNetworkVariable("ticTacToePackageId");
   const suiClient = useSuiClient();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
