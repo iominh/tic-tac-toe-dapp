@@ -74,6 +74,15 @@ module tic_tac_toe::game {
         win_detected: bool
     }
 
+    // Add new debug event
+    public struct WinnerDebug has copy, drop {
+        game_id: address,
+        sender: address,
+        player_piece: u8,
+        is_winner: bool,
+        board: vector<u8>
+    }
+
     public fun create_game(ctx: &mut TxContext) {
         let creator = tx_context::sender(ctx);
         let game_id = object::new(ctx);
@@ -151,26 +160,19 @@ module tic_tac_toe::game {
             board: game.board
         });
 
-        // Verify piece was placed correctly
-        assert!(*vector::borrow(&game.board, (position as u64)) == player_piece, EPiecePlacementFailed);
-
-        // Check for win and emit win check event
         let is_winner = check_winner(&game.board, player_piece);
 
-        // Print board state for debugging
-        let board_str = std::string::utf8(b"Board state: ");
-        std::debug::print(&board_str);
-        std::debug::print(&game.board);
-
-        // Verify game is still active
-        assert!(game.status == GAME_ACTIVE, EGameNotActive);
+        // Debug event to verify winner check
+        event::emit(WinnerDebug {
+            game_id,
+            sender,
+            player_piece,
+            is_winner,
+            board: game.board
+        });
 
         if (is_winner) {
-            // Double check win condition
-            assert!(check_winner(&game.board, player_piece), EWinCheckFailed);
-            
             game.status = GAME_WON;
-            // Emit game result for win
             event::emit(GameResult {
                 game_id,
                 player_x: game.player_x,
@@ -181,11 +183,9 @@ module tic_tac_toe::game {
             return
         };
 
-        // Check for draw
-        let is_draw = is_board_full(&game.board);
-        if (is_draw) {
+        // Then check draw
+        if (is_board_full(&game.board)) {
             game.status = GAME_DRAW;
-            // Emit game result for draw
             event::emit(GameResult {
                 game_id,
                 player_x: game.player_x,
@@ -206,47 +206,43 @@ module tic_tac_toe::game {
 
     // Update check_winner to be more explicit
     public fun check_winner(board: &vector<u8>, player: u8): bool {
-        let mut has_win = false;
-
         // Check rows
         let mut i = 0;
         while (i < 3) {
-            if (*vector::borrow(board, i * 3) == player &&
-                *vector::borrow(board, i * 3 + 1) == player &&
-                *vector::borrow(board, i * 3 + 2) == player) {
-                has_win = true;
-                break
+            let row_start = i * 3;
+            if (*vector::borrow(board, row_start) == player &&
+                *vector::borrow(board, row_start + 1) == player &&
+                *vector::borrow(board, row_start + 2) == player) {
+                return true
             };
             i = i + 1;
         };
 
-        // Check columns if no row win
-        if (!has_win) {
-            i = 0;
-            while (i < 3) {
-                if (*vector::borrow(board, i) == player &&
-                    *vector::borrow(board, i + 3) == player &&
-                    *vector::borrow(board, i + 6) == player) {
-                    has_win = true;
-                    break
-                };
-                i = i + 1;
+        // Check columns
+        i = 0;
+        while (i < 3) {
+            if (*vector::borrow(board, i) == player &&
+                *vector::borrow(board, i + 3) == player &&
+                *vector::borrow(board, i + 6) == player) {
+                return true
             };
+            i = i + 1;
         };
 
-        // Check diagonals if still no win
-        if (!has_win) {
-            if ((*vector::borrow(board, 0) == player &&
-                 *vector::borrow(board, 4) == player &&
-                 *vector::borrow(board, 8) == player) ||
-                (*vector::borrow(board, 2) == player &&
-                 *vector::borrow(board, 4) == player &&
-                 *vector::borrow(board, 6) == player)) {
-                has_win = true;
-            };
+        // Check diagonals
+        if (*vector::borrow(board, 0) == player &&
+            *vector::borrow(board, 4) == player &&
+            *vector::borrow(board, 8) == player) {
+            return true
         };
 
-        has_win
+        if (*vector::borrow(board, 2) == player &&
+            *vector::borrow(board, 4) == player &&
+            *vector::borrow(board, 6) == player) {
+            return true
+        };
+
+        false
     }
 
     fun is_board_full(board: &vector<u8>): bool {

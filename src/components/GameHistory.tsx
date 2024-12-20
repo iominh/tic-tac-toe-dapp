@@ -3,19 +3,16 @@ import { Table } from "@radix-ui/themes";
 import { useEffect, useState, useCallback } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { GameResult, GameStatus } from "../types";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function parseGameResult(fields: Record<string, any>): GameResult {
-  let winner = null;
-  if (fields.winner && !fields.winner.none) {
-    winner = fields.winner.some?.toLowerCase() || null;
-  }
+  console.log("Parsing GameResult fields:", fields);
 
   return {
     gameId: fields.game_id.toLowerCase(),
     playerX: fields.player_x.toLowerCase(),
     playerO: fields.player_o.toLowerCase(),
-    winner,
+    winner: fields.winner,
     status: fields.status as GameStatus,
     timestamp: Date.now(),
   };
@@ -26,6 +23,7 @@ export function GameHistory() {
   const suiClient = useSuiClient();
   const [games, setGames] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Fetch all game results
   const fetchGameResults = useCallback(async () => {
@@ -102,7 +100,6 @@ export function GameHistory() {
     <Table.Root>
       <Table.Header>
         <Table.Row>
-          <Table.ColumnHeaderCell>Game ID</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Player X</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Player O</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Result</Table.ColumnHeaderCell>
@@ -113,16 +110,9 @@ export function GameHistory() {
         {games.map((game) => (
           <Table.Row
             key={`${game.gameId}-${game.timestamp}`}
-            className="animate-fade-in"
+            className="animate-fade-in cursor-pointer transition-colors hover:bg-accent"
+            onClick={() => navigate(`/game/${game.gameId}`)}
           >
-            <Table.Cell className="font-mono">
-              <Link
-                to={`/game/${game.gameId}`}
-                className="text-blue-500 hover:text-blue-600"
-              >
-                {game.gameId.slice(0, 8)}...
-              </Link>
-            </Table.Cell>
             <Table.Cell className="font-mono">
               {game.playerX.slice(0, 6)}...
             </Table.Cell>
@@ -130,11 +120,24 @@ export function GameHistory() {
               {game.playerO.slice(0, 6)}...
             </Table.Cell>
             <Table.Cell>
-              {game.status === 1
-                ? "Draw"
-                : game.winner
-                  ? `Winner: ${game.winner.slice(0, 6)}...`
-                  : "In Progress"}
+              {game.status === 1 ? (
+                "Draw"
+              ) : game.status === 2 && game.winner ? (
+                <span>
+                  Winner:{" "}
+                  {game.winner === game.playerX ? (
+                    <span className="text-blue-500">Player X</span>
+                  ) : (
+                    <span className="text-red-500">Player O</span>
+                  )}
+                  <br />
+                  <span className="text-sm text-gray-500 font-mono">
+                    {game.winner.slice(0, 10)}...{game.winner.slice(-4)}
+                  </span>
+                </span>
+              ) : (
+                "Complete"
+              )}
             </Table.Cell>
           </Table.Row>
         ))}

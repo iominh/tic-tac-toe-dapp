@@ -26,19 +26,15 @@ interface RawGameData {
 }
 
 function parseGameResult(fields: Record<string, any>): GameResult {
-  console.log("Parsing fields:", fields);
-
-  let winner = null;
-  if (fields.winner && !fields.winner.none) {
-    winner = fields.winner.some?.toLowerCase() || null;
-  }
+  console.log("Parsing GameResult fields:", fields);
 
   return {
     gameId: fields.game_id.toLowerCase(),
     playerX: fields.player_x.toLowerCase(),
     playerO: fields.player_o.toLowerCase(),
-    winner: winner,
+    winner: fields.winner,
     status: fields.status as GameStatus,
+    timestamp: Date.now(),
   };
 }
 
@@ -168,7 +164,7 @@ export function Game({
               console.log("Event missing game_id:", parsedJson);
               return false;
             }
-            return parsedJson.game_id.toLowerCase() === gameId.toLowerCase();
+            return parsedJson.game_id.toLowerCase() === gameId?.toLowerCase();
           })
           .map((event) => {
             try {
