@@ -157,7 +157,18 @@ export function Game({ id }: GameProps) {
     };
   }, [packageId, suiClient, id]);
 
+  const canJoin = useMemo(() => {
+    if (!currentAccount || !game) return false;
+    return (
+      game.playerO ===
+        "0x0000000000000000000000000000000000000000000000000000000000000000" &&
+      game.playerX !== currentAccount.address
+    );
+  }, [currentAccount, game]);
+
   const joinGame = useCallback(() => {
+    if (!game) return;
+
     const tx = new Transaction();
     tx.moveCall({
       arguments: [tx.object(id)],
@@ -169,13 +180,18 @@ export function Game({ id }: GameProps) {
         transaction: tx,
       },
       {
-        onSuccess: ({ digest }) => {
-          suiClient.waitForTransaction({ digest }).then(() => refetch());
+        onSuccess: async ({ digest }) => {
+          try {
+            await suiClient.waitForTransaction({ digest });
+            refetch();
+          } catch (e) {
+            setError(`Failed to join game: ${e}`);
+          }
         },
         onError: (e) => setError(`Failed to join: ${e.message}`),
       },
     );
-  }, [id, packageId, refetch, signAndExecute, suiClient]);
+  }, [id, packageId, refetch, signAndExecute, suiClient, game]);
 
   const makeMove = useCallback(
     (position: number) => {
@@ -240,11 +256,6 @@ export function Game({ id }: GameProps) {
     );
   }
 
-  const canJoin =
-    currentAccount &&
-    game.playerO === "0x0" &&
-    game.playerX !== currentAccount.address;
-
   return (
     <Flex direction="column" align="center" gap="8" className="w-full">
       {error && (
@@ -254,7 +265,10 @@ export function Game({ id }: GameProps) {
       )}
 
       {canJoin ? (
-        <Button onClick={joinGame}>Join Game</Button>
+        <Flex direction="column" gap="4" align="center">
+          <Text>This game needs another player!</Text>
+          <Button onClick={joinGame}>Join as Player O</Button>
+        </Flex>
       ) : (
         <GameBoard
           game={game}
