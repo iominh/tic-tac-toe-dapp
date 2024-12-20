@@ -58,7 +58,7 @@ module tic_tac_toe::game {
         // Set player O
         game.player_o = joiner;
         
-        // Ensure X goes first and current_turn is never zero address
+        // After O joins, X gets first turn
         game.current_turn = game.player_x;
     }
 
@@ -71,34 +71,25 @@ module tic_tac_toe::game {
         assert!(vector::borrow(&game.board, (position as u64)) == &0, ESpotTaken);
         assert!(sender == game.current_turn, ENotYourTurn);
         
-        // Additional validation: if player O hasn't joined, X can only make one move
+        // If player O hasn't joined, only X can make first move and then must wait
         if (game.player_o == @0x0) {
-            assert!(sender == game.player_x, EInvalidPlayer);
-            // Check if X has already made a move
-            let mut has_moves = false;
-            let mut i = 0;
-            while (i < 9) {
-                if (*vector::borrow(&game.board, i) != 0) {
-                    has_moves = true;
-                    break;
-                };
-                i = i + 1;
-            };
-            assert!(!has_moves, EGameNotFull);
+            assert!(sender == game.player_x, EInvalidPlayer); // Only X can play first
+            assert!(game.board == vector[0, 0, 0, 0, 0, 0, 0, 0, 0], EGameNotFull); // Must be first move
+            game.current_turn = @0x0; // Block further moves until O joins
         };
         
         // Make move
         let player_piece = if (sender == game.player_x) 1 else 2;
         *vector::borrow_mut(&mut game.board, (position as u64)) = player_piece;
 
-        // Update turn - ensure we never set to zero address
-        if (sender == game.player_x && game.player_o != @0x0) {
-            // Only switch to O if they've joined
-            game.current_turn = game.player_o;
-        } else if (sender == game.player_o) {
-            game.current_turn = game.player_x;
+        // Update turn only if both players are present
+        if (game.player_o != @0x0) {
+            game.current_turn = if (sender == game.player_x) {
+                game.player_o
+            } else {
+                game.player_x
+            };
         };
-        // If O hasn't joined, keep turn as X
 
         // Check win condition
         if (check_winner(&game.board, player_piece)) {
