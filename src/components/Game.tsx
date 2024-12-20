@@ -51,7 +51,7 @@ export function Game({ id, onLoadingChange }: GameProps) {
   const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
-  const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
+  const [, setGameHistory] = useState<GameResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<number | null>(null);
 
