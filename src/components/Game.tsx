@@ -36,6 +36,7 @@ export function Game({ id }: GameProps) {
   const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<number | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
 
   const { data: gameData, refetch } = useSuiClientQuery("getObject", {
     id,
@@ -44,6 +45,16 @@ export function Game({ id }: GameProps) {
       showOwner: true,
     },
   });
+
+  // Define refetchWithIndicator before it's used
+  const refetchWithIndicator = useCallback(async () => {
+    setIsPolling(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPolling(false);
+    }
+  }, [refetch]);
 
   const game = useMemo(() => {
     if (!gameData?.data?.content) return undefined;
@@ -183,7 +194,7 @@ export function Game({ id }: GameProps) {
         onSuccess: async ({ digest }) => {
           try {
             await suiClient.waitForTransaction({ digest });
-            refetch();
+            await refetchWithIndicator();
           } catch (e) {
             setError(`Failed to join game: ${e}`);
           }
@@ -191,7 +202,7 @@ export function Game({ id }: GameProps) {
         onError: (e) => setError(`Failed to join: ${e.message}`),
       },
     );
-  }, [id, packageId, refetch, signAndExecute, suiClient, game]);
+  }, [id, packageId, refetchWithIndicator, signAndExecute, suiClient, game]);
 
   const makeMove = useCallback(
     (position: number) => {
@@ -209,29 +220,8 @@ export function Game({ id }: GameProps) {
         {
           onSuccess: async ({ digest }) => {
             try {
-              // Wait for transaction
               await suiClient.waitForTransaction({ digest });
-
-              // Get transaction details
-              const txDetails = await suiClient.getTransactionBlock({
-                digest,
-                options: {
-                  showEvents: true,
-                },
-              });
-
-              // Update history if there's a game result event
-              const gameResultEvent = txDetails.events?.find(
-                (event) => event.type === `${packageId}::game::GameResult`,
-              );
-
-              if (gameResultEvent) {
-                const result = gameResultEvent.parsedJson as GameResult;
-                setGameHistory((prev) => [result, ...prev]);
-              }
-
-              // Refresh game state
-              refetch();
+              await refetchWithIndicator();
             } catch (e) {
               setError(`Error processing move: ${e}`);
             } finally {
@@ -245,8 +235,22 @@ export function Game({ id }: GameProps) {
         },
       );
     },
-    [id, packageId, refetch, signAndExecute, suiClient],
+    [id, packageId, refetchWithIndicator, signAndExecute, suiClient],
   );
+
+  // Add polling effect
+  useEffect(() => {
+    // Only poll if we're in an active game
+    if (!game || game.status !== 0) return;
+
+    const pollInterval = setInterval(() => {
+      refetch();
+    }, 2000); // Poll every 2 seconds
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [game, refetch]);
 
   if (!game) {
     return (
@@ -264,6 +268,13 @@ export function Game({ id }: GameProps) {
         </Text>
       )}
 
+      {/* Add polling indicator */}
+      {isPolling && (
+        <Text size="1" color="gray" className="animate-pulse">
+          Updating...
+        </Text>
+      )}
+
       {canJoin ? (
         <Flex direction="column" gap="4" align="center">
           <Text>This game needs another player!</Text>
@@ -273,7 +284,7 @@ export function Game({ id }: GameProps) {
         <GameBoard
           game={game}
           onMove={makeMove}
-          disabled={game.status !== 0}
+          disabled={game.status !== 0 || isPolling}
           isMovePending={pendingMove !== null}
           pendingMoveIndex={pendingMove}
         />
