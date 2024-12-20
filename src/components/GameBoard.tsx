@@ -153,6 +153,39 @@ export function GameBoard({
 }
 
 function GameStatus({ game }: { game: GameType }) {
+  const [copied, setCopied] = useState(false);
+  const isWaitingForPlayer =
+    game.playerO ===
+    "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const gameUrl = `${window.location.origin}/game/${game.id}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(gameUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isWaitingForPlayer) {
+    return (
+      <div className="text-center mb-8">
+        <Text size="3" color="gray" mb="2">
+          Waiting for another player to join...
+        </Text>
+        <div className="flex items-center gap-2 max-w-md mx-auto">
+          <Text className="font-mono px-3 py-1 bg-gray-a3 rounded flex-1 truncate">
+            {gameUrl}
+          </Text>
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1 rounded bg-gray-a3 hover:bg-gray-a4 transition-colors"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (game.status === 2) {
     const winner = game.currentTurn;
     const isPlayerX = winner === game.playerX;
