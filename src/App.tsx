@@ -6,6 +6,7 @@ import { TicTacToeIcon } from "./TicTacToeIcon";
 import { CreateGame } from "./components/CreateGame";
 import { Game } from "./components/Game";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { LandingPage } from "./components/LandingPage";
 
 function App() {
   const currentAccount = useCurrentAccount();
@@ -72,15 +73,7 @@ function App() {
               />
             )
           ) : (
-            <Flex direction="column" align="center" gap="4">
-              <Heading size="6" align="center">
-                Please connect your wallet
-              </Heading>
-              <Text color="gray">
-                Connect your wallet to create or join Tic Tac Toe games
-              </Text>
-              <ConnectButton />
-            </Flex>
+            <LandingPage />
           )}
         </Container>
       </Container>

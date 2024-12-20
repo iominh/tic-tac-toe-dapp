@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+.text-blue-500 {
+  color: var(--blue-9);
+}
+
+.bg-blue-500\/20 {
+  background-color: color-mix(in srgb, var(--blue-9) 20%, transparent);
+}
+
+.border-blue-500 {
+  border-color: var(--blue-9);
+}
